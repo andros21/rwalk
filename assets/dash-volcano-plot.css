@@ -1,0 +1,96 @@
+#vp-page-content {
+    background-color: #F1F9FA !important;
+    color: #5B5B5B !important;
+}
+
+#vp-page-content ::-webkit-scrollbar {
+    background-color: #F1F9FA !important;
+}
+#vp-page-content ::-webkit-scrollbar-thumb {
+    background-color: #19D3F3 !important;
+}
+
+#vp-control-tabs .tab--selected {
+    border-color: #CC00CC !important;
+    color: #CC00CC !important;
+}
+#vp-graph {
+    height: 500px;
+}
+/*#vp-graph-div {*/
+    /*display: inline-block !important;*/
+    /*margin-top: 50px;*/
+    /*margin-left: 50px;*/
+    /*margin-right: 50px;*/
+/*}*/
+#vp-page-content .rc-slider-track {
+    background-color: #1191f3 !important;
+}
+#vp-page-content .rc-slider-handle, #vp-page-content .rc-slider-dot-active {
+    border-color: #1191f3 !important;
+}
+#vp-bound-val, #vp-genomic-line-val {
+    display: inline-block;
+    float: right;
+}
+/*#vp-page-content .app-controls-name {*/
+    /*width: 240px;*/
+/*}*/
+#vp-page-content #vp-dataset-radio {
+    width: 140px !important;
+    display: block;
+    margin-left: 5%;
+}
+#vp-page-content .rc-slider #vp-dataset-slider {
+    width: 240px !important;
+    display: inline-block;
+}
+.vp-test-util-div {
+    display: none;
+}
+
+#vp-page-content .chrome-picker, #vp-color-picker {
+    border: none !important;
+}
+#vp-color-picker {
+    margin-top: 20px;
+    display: inline-block;
+}
+#vp-num-points-display {
+    display: inline-block;
+    float: right;
+    margin-top: 35px;
+}
+.vp-event-data-display {
+    display: inline-block;
+    width: 160px;
+    vertical-align: top;
+    margin-top: 5px;
+}
+#vp-event-data {
+    margin-bottom: 20px;
+}
+
+#app-page-content .app-body .tab {
+    font-weight: 200;
+    font-size: 9pt;
+    height: 50px;
+    padding: 15px;
+    background-color: #ffffff; /* Change in individual app stylesheet */
+    border: solid 1px #d3d3d3; /* Change in individual app stylesheet */
+}
+
+
+#app-page-content .app-body .tab--selected {
+    font-weight: bolder;
+    border: none;
+    border-top: solid 2px;
+    color: #CC00CC; /* Change in individual app stylesheet */
+}
+
+#vp-plot-tabs-parent {
+   width: 800px;
+   display: inline-block;
+   margin-top: 50px;
+   margin-left: 50px;
+}
