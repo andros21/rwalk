@@ -6,4 +6,5 @@
 LICENSE
 README.md
 __pycache__/*
+data/*
 requirements-dev.txt
