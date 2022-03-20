@@ -1,6 +1,9 @@
-# Import required libraries
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
+import os
 import sqlite3
+import sys
 
 import dash
 import numpy as np
@@ -19,32 +22,78 @@ app_title = "Random Walk"
 repo_url = "https://github.com/andros21/rwalk"
 
 
-SQLITE3_DB = "/data/rwalker.sqlite3"
+# data dirs
+if os.path.exists("/data"):
+    SQLITE3_DB = "/data/rwalker.sqlite3"
+else:
+    SQLITE3_DB = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "data/rwalker.sqlite3"
+    )
 
+# datasets
 DATASETS = {
-    1: {
-        "label": "classic",
-        "table": "crw_pdf",
+    "classic": {
+        "discrete": {
+            "line": {
+                "table": "crw_line",
+            },
+            "ring": {
+                "table": "crw_ring",
+            },
+        },
+        "continuous": {
+            "line": {
+                "table": "crw_line_ct",
+            },
+            "ring": {
+                "table": "crw_ring_ct",
+            },
+        },
     },
-    2: {
-        "label": "quantum",
-        "table": "qrw_pdf",
-    },
-    3: {
-        "label": "classic-std",
-        "table": "crw_std",
-    },
-    4: {
-        "label": "quantum-std",
-        "table": "qrw_std",
+    "quantum": {
+        "discrete": {
+            "line": {
+                "table": "qrw_line",
+            },
+            "ring": {
+                "table": "qrw_ring",
+            },
+        },
+        "continuous": {
+            "line": {
+                "table": "qrw_line_ct",
+            },
+            "ring": {
+                "table": "qrw_ring_ct",
+            },
+        },
     },
 }
 
+# load data from sqlite3 db
+colors = iter(
+    [
+        "#119DFF",  # classic dt line
+        "#119DFF",  # classic dt ring
+        "#0860C4",  # classic ct line
+        "#0860C4",  # classic ct ring
+        "#FFCE19",  # quantum dt line
+        "#FFCE19",  # quantum dt ring
+        "#FF7700",  # quantum ct line
+        "#D50000",  # quantum ct ring
+    ]
+)
 engine = sqlite3.connect(SQLITE3_DB)
-for dataset in DATASETS:
-    DATASETS[dataset]["dataframe"] = pd.read_sql(
-        f"select * from {DATASETS[dataset]['table']}", engine
-    )
+for walker in DATASETS:
+    for time in DATASETS[walker]:
+        for graph in DATASETS[walker][time]:
+            DATASETS[walker][time][graph]["color"] = next(colors)
+            DATASETS[walker][time][graph]["dataframe"] = dict()
+            for tab in ["pdf", "std"]:
+                DATASETS[walker][time][graph]["dataframe"][tab] = pd.read_sql(
+                    f"select * from {DATASETS[walker][time][graph]['table']}_{tab}",
+                    engine,
+                )
 engine.close()
 
 
@@ -110,14 +159,15 @@ def layout():
                                             children="What is RW?",
                                         ),
                                         html.P(
-                                            "In mathematics, a random walk is a random process that describes a path that consists of a succession of random steps on space. An elementary example of a random walk is the random walk on the integer number line which starts at 0, and at each step moves +1 or −1 with equal probability."
+                                            "In mathematics, a random walk is a random process that describes a path that consists of a succession of random steps on space."
                                         ),
                                         html.P(
-                                            "Let's focus on it, and check out the main differences between a classic rw and quantum rw (coin is up or down)?"
+                                            "What are the main differences between a classic and quantum walk? "
+                                            "And evolving with continuous time? And what about random walk on a ring?"
                                         ),
                                         html.P(
                                             'In the "Plot" tab, you can play with the evolution of '
-                                            "density function and its associated standard deviation."
+                                            "density function and its associated std deviation for all these cases."
                                         ),
                                         html.P("Quantum random walk is must faster!"),
                                     ],
@@ -140,15 +190,44 @@ def layout():
                                                     id="vp-dataset-radio",
                                                     options=[
                                                         {
-                                                            "label": DATASETS[dset][
-                                                                "label"
-                                                            ],
-                                                            "value": dset,
+                                                            "label": walker,
+                                                            "value": walker,
                                                         }
-                                                        for dset in [1, 2]
+                                                        for walker in DATASETS
                                                     ],
-                                                    value=1,
-                                                    inline=True,
+                                                    value="classic",
+                                                ),
+                                                html.Div(
+                                                    className="app-controls-name",
+                                                    children="Time",
+                                                ),
+                                                dcc.RadioItems(
+                                                    id="vp-dataset-radio-time",
+                                                    options=[
+                                                        {
+                                                            "label": time,
+                                                            "value": time,
+                                                        }
+                                                        for time in DATASETS["classic"]
+                                                    ],
+                                                    value="discrete",
+                                                ),
+                                                html.Div(
+                                                    className="app-controls-name",
+                                                    children="Graph",
+                                                ),
+                                                dcc.RadioItems(
+                                                    id="vp-dataset-radio-graph",
+                                                    options=[
+                                                        {
+                                                            "label": graph,
+                                                            "value": graph,
+                                                        }
+                                                        for graph in DATASETS[
+                                                            "classic"
+                                                        ]["discrete"]
+                                                    ],
+                                                    value="line",
                                                 ),
                                                 html.Div(
                                                     className="app-controls-name",
@@ -177,23 +256,34 @@ def layout():
 def callbacks(_app):
     @_app.callback(
         Output("vp-graph", "figure"),
-        [Input("vp-dataset-radio", "value"), Input("vp-dataset-slider", "value")],
+        [
+            Input("vp-dataset-radio", "value"),
+            Input("vp-dataset-radio-time", "value"),
+            Input("vp-dataset-radio-graph", "value"),
+            Input("vp-dataset-slider", "value"),
+        ],
     )
-    def update_graph(dataset_id, step):
+    def update_pdf(walker, time, graph, step):
         """Update density function plot"""
-        color = "#119dff" if dataset_id == 1 else "#ffce19"
-        sites = (
-            np.arange(-50, 50 + 1, 1) if dataset_id == 1 else np.arange(-80, 80 + 1, 1)
-        )
+        col = DATASETS[walker][time][graph]["color"]
+        df = DATASETS[walker][time][graph]["dataframe"]["pdf"]
+        if graph == "line":
+            limit = int((df.columns.size - 1) * 0.5)
+            sites = np.arange(-limit, limit + 1, 1)
+        elif graph == "ring":
+            limit = df.columns.size
+            sites = np.arange(0, limit, 1)
+        else:
+            sys.exit(1)
         return {
             "data": [
                 dict(
                     type="scatter",
                     fill="tozeroy",
                     x=sites,
-                    y=DATASETS[dataset_id]["dataframe"].loc[step].to_numpy(),
+                    y=df.loc[step].to_numpy(),
                     marker={
-                        "color": color,
+                        "color": col,
                     },
                 )
             ],
@@ -207,29 +297,28 @@ def callbacks(_app):
         Output("vp-graph-std", "figure"),
         [Input("vp-dataset-slider", "value")],
     )
-    def update_graph(step):
+    def update_std(step):
         """Update standard deviation plot"""
+        data = list()
+        for walker in DATASETS:
+            for time in DATASETS[walker]:
+                for graph in DATASETS[walker][time]:
+                    col = DATASETS[walker][time][graph]["color"]
+                    df = DATASETS[walker][time][graph]["dataframe"]["std"]
+                    nm = DATASETS[walker][time][graph]["table"]
+                    data.append(
+                        dict(
+                            type="scatter",
+                            x=df.index.to_numpy()[:step],
+                            y=df["0"][:step],
+                            name=nm,
+                            marker={
+                                "color": col,
+                            },
+                        )
+                    )
         return {
-            "data": [
-                dict(
-                    type="scatter",
-                    x=DATASETS[3]["dataframe"].index.to_numpy()[0:step],
-                    y=DATASETS[3]["dataframe"]["0"][0:step],
-                    name="classic",
-                    marker={
-                        "color": "#119dff",
-                    },
-                ),
-                dict(
-                    type="scatter",
-                    x=DATASETS[4]["dataframe"].index.to_numpy()[0:step],
-                    y=DATASETS[4]["dataframe"]["0"][0:step],
-                    name="quantum",
-                    marker={
-                        "color": "#ffce19",
-                    },
-                ),
-            ],
+            "data": data,
             "layout": dict(
                 xaxis={"title": "steps"},
                 yaxis={"title": "std"},

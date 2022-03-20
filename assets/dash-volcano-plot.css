@@ -36,10 +36,13 @@
 /*#vp-page-content .app-controls-name {*/
     /*width: 240px;*/
 /*}*/
-#vp-page-content #vp-dataset-radio {
-    width: 140px !important;
-    display: block;
-    margin-left: 5%;
+/*#vp-page-content #vp-dataset-radio #vp-dataset-radio-time #vp-dataset-radio-graph {*/
+    /*width: 140px !important;*/
+    /*display: block;*/
+    /*margin-left: 20%;*/
+/*}*/
+#vp-dataset-radio, #vp-dataset-radio-time, #vp-dataset-radio-graph {
+   margin-left: 5%;
 }
 #vp-page-content .rc-slider #vp-dataset-slider {
     width: 240px !important;
