@@ -1,25 +1,30 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import gzip
+import json
 import os
+import re
 import sqlite3
 import sys
 
+import networkx as nx
 import numpy as np
 import pandas as pd
 import scipy.linalg as la
 
 # data dirs
 if os.path.exists("/data"):
-    SQLITE3_DB = "/data/rwalker.sqlite3"
+    DATA_DIR = "/data"
+    SQLITE3_DB = os.path.join(DATA_DIR, "rwalker.sqlite3")
 else:
-    SQLITE3_DB = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), "data/rwalker.sqlite3"
-    )
-    os.makedirs(os.path.dirname(SQLITE3_DB), exist_ok=True)
+    DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
+    SQLITE3_DB = os.path.join(DATA_DIR, "rwalker.sqlite3")
+    os.makedirs(DATA_DIR, exist_ok=True)
 
 
 def _die(msg: str):
+    """print error and exit 1"""
     print(msg, file=sys.stderr)
     sys.exit(1)
 
@@ -32,8 +37,27 @@ def _dump_to_sql(dataframes: list, tables: list):
     engine.close()
 
 
-def _gen_laplacian_matrix(graph: str, dim: int) -> np.ndarray:
-    """generate laplacian matrix of given graph and dim"""
+def _fix_cyto_json(graph: str, cyto_json: dict) -> dict:
+    """fix cytoscape json dictionary"""
+    if graph == "line":
+        for node in cyto_json["elements"]["nodes"]:
+            node["data"]["name"] = str(
+                int(node["data"]["name"])
+                - (len(cyto_json["elements"]["nodes"]) - 1) * 0.5
+            )
+    cyto_str = json.dumps(cyto_json)
+    cyto_str = re.sub(r'"source":\ (\d?\d?\d)', r'"source": "\1"', cyto_str)
+    cyto_str = re.sub(r'"target":\ (\d?\d?\d)', r'"target": "\1"', cyto_str)
+    return json.loads(cyto_str)
+
+
+def _gen_laplacian_matrix(
+    graph: str, dim: int, walker: str, time: str, draw=True
+) -> np.ndarray:
+    """
+    generate laplacian matrix of given graph and dim,
+    and if draw is True save the graph as cytoscape json format
+    """
     A = np.zeros((dim, dim))
     if graph == "line":
         for i in np.arange(A.shape[0]):
@@ -51,10 +75,23 @@ def _gen_laplacian_matrix(graph: str, dim: int) -> np.ndarray:
                     A[i][j] = 1.0
         A[0][dim - 1] = 1.0
         A[dim - 1][0] = 1.0
+    elif graph == "rand":
+        G = nx.random_regular_graph(2, dim, seed=0)
+        A = nx.to_numpy_array(G)
     else:
         _die(f"[ERROR] {graph} graph not planned to be implemented")
     if not np.allclose(A, A.T, rtol=1e-5, atol=1e-8):
         _die(f"[ERROR] adjacency matrix for {graph} graph it's not symmetric")
+    if draw:
+        G = nx.from_numpy_matrix(A)
+        cyto_json = nx.cytoscape_data(G)
+        cyto_json = _fix_cyto_json(graph, cyto_json)
+        with gzip.open(
+            os.path.join(DATA_DIR, f"{walker}-{graph}-{time}.json.gz"),
+            "wt",
+            encoding="UTF-8",
+        ) as gz:
+            json.dump(cyto_json, gz)
     return np.diag(np.sum(A, axis=0)) - A
 
 
@@ -65,6 +102,7 @@ def classic_dtime(graph: str, init_site: int, limit: int, nsteps: int):
         2. crw_std - row: nsteps+1, col: 1
     containg the results of:
         classic random walker discrete-time on-graph simulation
+    save the graph rappresentation as cytoscape compressed json
     """
     # parameters
     if graph == "line":
@@ -85,8 +123,13 @@ def classic_dtime(graph: str, init_site: int, limit: int, nsteps: int):
     # evolve pdf
     if graph == "line":
         for i in np.arange(1, pdf.shape[0], 1):
-            for j in np.arange(1, pdf.shape[1] - 1, 1):
-                pdf[i][j] = 0.5 * pdf[i - 1][j - 1] + 0.5 * pdf[i - 1][j + 1]
+            for j in np.arange(0, pdf.shape[1], 1):
+                if j + 1 >= pdf.shape[1]:
+                    pdf[i][j] = 1.0 * pdf[i - 1][j - 1]
+                elif j - 1 < 0:
+                    pdf[i][j] = 1.0 * pdf[i - 1][j + 1]
+                else:
+                    pdf[i][j] = 0.5 * pdf[i - 1][j - 1] + 0.5 * pdf[i - 1][j + 1]
     else:
         for i in np.arange(1, pdf.shape[0], 1):
             for j in np.arange(0, pdf.shape[1], 1):
@@ -96,6 +139,8 @@ def classic_dtime(graph: str, init_site: int, limit: int, nsteps: int):
                     pdf[i][j] = 0.5 * pdf[i - 1][j - 1] + 0.5 * pdf[i - 1][0]
                 else:
                     pdf[i][j] = 0.5 * pdf[i - 1][j - 1] + 0.5 * pdf[i - 1][j + 1]
+    # draw graph
+    _gen_laplacian_matrix(graph, nsites, "classic", "discrete")
     # compute std
     if graph == "ring":
         sites = np.concatenate(
@@ -116,6 +161,7 @@ def classic_ctime(graph: str, init_site: int, limit: int, nsteps: int):
         2. crw_ct_std - row: nsteps+1, col: 1
     containg the results of:
         classic random walker continuous-time on-graph simulation
+    save the graph rappresentation as cytoscape compressed json
     """
     # parameters
     gamma = 0.15
@@ -123,13 +169,13 @@ def classic_ctime(graph: str, init_site: int, limit: int, nsteps: int):
     if graph == "line":
         nsites = limit * 2 + 1
         sites = np.arange(-limit, limit + 1, 1)
-    elif graph == "ring":
+    elif graph == "ring" or graph == "rand":
         nsites = limit + 1
         sites = np.arange(0, limit + 1, 1)
     else:
         _die(f"[ERROR] {graph} graph not planned to be implemented")
     # evolve matrix
-    H = gamma * _gen_laplacian_matrix(graph, nsites)
+    H = gamma * _gen_laplacian_matrix(graph, nsites, "classic", "continuous")
     # init pdf
     pdf = np.zeros((times.size, nsites))
     if graph == "line":
@@ -145,12 +191,15 @@ def classic_ctime(graph: str, init_site: int, limit: int, nsteps: int):
         sites = np.concatenate(
             (np.arange(0, int(limit * 0.5) + 1, 1), np.arange(-int(limit * 0.5), 0, 1))
         )
-    var = pdf @ sites**2
-    std = np.sqrt(var)
+    var = pdf @ sites**2 if not graph == "rand" else None
+    std = np.sqrt(var) if not graph == "rand" else None
     # save tables
     pdf_df = pd.DataFrame(pdf)
-    std_df = pd.DataFrame(std.T)
-    _dump_to_sql([pdf_df, std_df], [f"crw_{graph}_ct_pdf", f"crw_{graph}_ct_std"])
+    std_df = pd.DataFrame(std.T) if not graph == "rand" else None
+    if not graph == "rand":
+        _dump_to_sql([pdf_df, std_df], [f"crw_{graph}_ct_pdf", f"crw_{graph}_ct_std"])
+    else:
+        _dump_to_sql([pdf_df, std_df], [f"crw_{graph}_ct_pdf"])
 
 
 def quantum_dtime(graph: str, init_site: int, limit: int, nsteps: int):
@@ -160,6 +209,7 @@ def quantum_dtime(graph: str, init_site: int, limit: int, nsteps: int):
         2. qrw_std - row: nsteps+1, col: 1
     containg the results of:
         quantum random walker discrete-time on-graph simulation
+    save the graph rappresentation as cytoscape compressed json
     """
     # parameters
     if graph == "line":
@@ -217,6 +267,8 @@ def quantum_dtime(graph: str, init_site: int, limit: int, nsteps: int):
                         wave_0[i - 1][j + 1] - wave_1[i - 1][j + 1]
                     ) / np.sqrt(2)
                 pdf[i][j] = la.norm(wave_0[i][j]) ** 2 + la.norm(wave_1[i][j]) ** 2
+    # draw graph
+    _gen_laplacian_matrix(graph, nsites, "quantum", "discrete")
     # compute std
     if graph == "ring":
         sites = np.concatenate(
@@ -237,6 +289,7 @@ def quantum_ctime(graph: str, init_site: int, limit: int, nsteps: int):
         2. qrw_std - row: nsteps+1, col: 1
     containg the results of:
         quantum random walker continuous-time on-graph simulation
+    save the graph rappresentation as cytoscape compressed json
     """
     # parameters
     gamma = 0.35
@@ -244,13 +297,13 @@ def quantum_ctime(graph: str, init_site: int, limit: int, nsteps: int):
     if graph == "line":
         nsites = limit * 2 + 1
         sites = np.arange(-limit, limit + 1, 1)
-    elif graph == "ring":
+    elif graph == "ring" or graph == "rand":
         nsites = limit + 1
         sites = np.arange(0, limit + 1, 1)
     else:
         _die(f"[ERROR] {graph} graph not planned to be implemented")
     # evolution matrix
-    H = gamma * _gen_laplacian_matrix(graph, nsites)
+    H = gamma * _gen_laplacian_matrix(graph, nsites, "quantum", "continuous")
     eig_vals, eig_vecs = la.eigh(H)
     # init pdf
     pdf = np.zeros((times.size, nsites))
@@ -275,12 +328,15 @@ def quantum_ctime(graph: str, init_site: int, limit: int, nsteps: int):
         sites = np.concatenate(
             (np.arange(0, int(limit * 0.5) + 1, 1), np.arange(-int(limit * 0.5), 0, 1))
         )
-    var = pdf @ sites**2
-    std = np.sqrt(var)
+    var = pdf @ sites**2 if not graph == "rand" else None
+    std = np.sqrt(var) if not graph == "rand" else None
     # save tables
     pdf_df = pd.DataFrame(pdf)
-    std_df = pd.DataFrame(std.T)
-    _dump_to_sql([pdf_df, std_df], [f"qrw_{graph}_ct_pdf", f"qrw_{graph}_ct_std"])
+    std_df = pd.DataFrame(std.T) if not graph == "rand" else None
+    if not graph == "rand":
+        _dump_to_sql([pdf_df, std_df], [f"qrw_{graph}_ct_pdf", f"qrw_{graph}_ct_std"])
+    else:
+        _dump_to_sql([pdf_df, std_df], [f"qrw_{graph}_ct_pdf"])
 
 
 if __name__ == "__main__":
@@ -292,6 +348,8 @@ if __name__ == "__main__":
 
     classic_ctime("line", 0, 50, 100)
     classic_ctime("ring", 0, 100, 100)
+    classic_ctime("rand", 0, 100, 100)
 
     quantum_ctime("line", 0, 80, 100)
     quantum_ctime("ring", 0, 200, 100)
+    quantum_ctime("rand", 0, 100, 100)
