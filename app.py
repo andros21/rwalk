@@ -1,11 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import gzip
+import json
 import os
 import sqlite3
 import sys
 
 import dash
+import dash_cytoscape as cyto
 import numpy as np
 import pandas as pd
 from dash import dcc, html
@@ -24,11 +27,11 @@ repo_url = "https://github.com/andros21/rwalk"
 
 # data dirs
 if os.path.exists("/data"):
-    SQLITE3_DB = "/data/rwalker.sqlite3"
+    DATA_DIR = "/data"
+    SQLITE3_DB = os.path.join(DATA_DIR, "rwalker.sqlite3")
 else:
-    SQLITE3_DB = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), "data/rwalker.sqlite3"
-    )
+    DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
+    SQLITE3_DB = os.path.join(DATA_DIR, "rwalker.sqlite3")
 
 # datasets
 DATASETS = {
@@ -48,6 +51,9 @@ DATASETS = {
             "ring": {
                 "table": "crw_ring_ct",
             },
+            "rand": {
+                "table": "crw_rand_ct",
+            },
         },
     },
     "quantum": {
@@ -66,21 +72,40 @@ DATASETS = {
             "ring": {
                 "table": "qrw_ring_ct",
             },
+            "rand": {
+                "table": "qrw_rand_ct",
+            },
         },
     },
 }
 
 # load data from sqlite3 db
+def _get_cytoscape_json(walker, time, graph):
+    """return cytoscape json from file"""
+    with gzip.open(
+        os.path.join(DATA_DIR, f"{walker}-{graph}-{time}.json.gz"),
+        "rt",
+        encoding="UTF-8",
+    ) as gz:
+        cyto_json = json.load(gz)
+        nodes = cyto_json["elements"]["nodes"]
+        edges = cyto_json["elements"]["edges"]
+        elem = nodes + edges
+    return elem
+
+
 colors = iter(
     [
         "#119DFF",  # classic dt line
         "#119DFF",  # classic dt ring
         "#0860C4",  # classic ct line
         "#0860C4",  # classic ct ring
+        "#0860C4",  # classic ct rand
         "#FFCE19",  # quantum dt line
         "#FFCE19",  # quantum dt ring
         "#FF7700",  # quantum ct line
         "#D50000",  # quantum ct ring
+        "#D50000",  # quantum ct rand
     ]
 )
 engine = sqlite3.connect(SQLITE3_DB)
@@ -88,8 +113,12 @@ for walker in DATASETS:
     for time in DATASETS[walker]:
         for graph in DATASETS[walker][time]:
             DATASETS[walker][time][graph]["color"] = next(colors)
+            DATASETS[walker][time][graph]["elem"] = _get_cytoscape_json(
+                walker, time, graph
+            )
             DATASETS[walker][time][graph]["dataframe"] = dict()
-            for tab in ["pdf", "std"]:
+            tabs = ["pdf", "std"] if not graph == "rand" else ["pdf"]
+            for tab in tabs:
                 DATASETS[walker][time][graph]["dataframe"][tab] = pd.read_sql(
                     f"select * from {DATASETS[walker][time][graph]['table']}_{tab}",
                     engine,
@@ -138,6 +167,19 @@ def layout():
                             ),
                         ],
                     ),
+                    dcc.Tab(
+                        label="Graph Draw",
+                        value="graph",
+                        children=[
+                            html.Div(
+                                id="vp-graph-draw-div",
+                                children=cyto.Cytoscape(
+                                    id="vp-graph-draw",
+                                    style={"width": "100%"},
+                                ),
+                            ),
+                        ],
+                    ),
                 ],
             ),
             html.Div(
@@ -163,7 +205,7 @@ def layout():
                                         ),
                                         html.P(
                                             "What are the main differences between a classic and quantum walk? "
-                                            "And evolving with continuous time? And what about random walk on a ring?"
+                                            "And evolving with continuous time? And what about random walk on a ring? Or even worst on random regular graph?"
                                         ),
                                         html.P(
                                             'In the "Plot" tab, you can play with the evolution of '
@@ -225,9 +267,27 @@ def layout():
                                                         }
                                                         for graph in DATASETS[
                                                             "classic"
-                                                        ]["discrete"]
+                                                        ]["continuous"]
                                                     ],
                                                     value="line",
+                                                ),
+                                                html.Div(
+                                                    className="app-controls-name",
+                                                    children="Draw",
+                                                ),
+                                                dcc.RadioItems(
+                                                    id="vp-dataset-radio-draw",
+                                                    options=[
+                                                        {
+                                                            "label": layout,
+                                                            "value": layout,
+                                                        }
+                                                        for layout in [
+                                                            "grid",
+                                                            "circle",
+                                                        ]
+                                                    ],
+                                                    value="grid",
                                                 ),
                                                 html.Div(
                                                     className="app-controls-name",
@@ -270,7 +330,7 @@ def callbacks(_app):
         if graph == "line":
             limit = int((df.columns.size - 1) * 0.5)
             sites = np.arange(-limit, limit + 1, 1)
-        elif graph == "ring":
+        elif graph == "ring" or graph == "rand":
             limit = df.columns.size
             sites = np.arange(0, limit, 1)
         else:
@@ -303,20 +363,21 @@ def callbacks(_app):
         for walker in DATASETS:
             for time in DATASETS[walker]:
                 for graph in DATASETS[walker][time]:
-                    col = DATASETS[walker][time][graph]["color"]
-                    df = DATASETS[walker][time][graph]["dataframe"]["std"]
-                    nm = DATASETS[walker][time][graph]["table"]
-                    data.append(
-                        dict(
-                            type="scatter",
-                            x=df.index.to_numpy()[:step],
-                            y=df["0"][:step],
-                            name=nm,
-                            marker={
-                                "color": col,
-                            },
+                    if not graph == "rand":
+                        col = DATASETS[walker][time][graph]["color"]
+                        df = DATASETS[walker][time][graph]["dataframe"]["std"]
+                        nm = DATASETS[walker][time][graph]["table"]
+                        data.append(
+                            dict(
+                                type="scatter",
+                                x=df.index.to_numpy()[: step + 1],
+                                y=df["0"][: step + 1],
+                                name=nm,
+                                marker={
+                                    "color": col,
+                                },
+                            )
                         )
-                    )
         return {
             "data": data,
             "layout": dict(
@@ -325,8 +386,90 @@ def callbacks(_app):
             ),
         }
 
+    @_app.callback(
+        Output("vp-graph-draw", "elements"),
+        [
+            Input("vp-dataset-radio", "value"),
+            Input("vp-dataset-radio-time", "value"),
+            Input("vp-dataset-radio-graph", "value"),
+        ],
+    )
+    def update_draw(walker, time, graph):
+        """update graph draw"""
+        return DATASETS[walker][time][graph]["elem"]
+
+    @_app.callback(
+        Output("vp-graph-draw", "layout"),
+        Input("vp-dataset-radio-draw", "value"),
+    )
+    def update_layout(layout):
+        """update graph draw layout"""
+        return {"name": layout}
+
+    @_app.callback(
+        Output("vp-graph-draw", "stylesheet"),
+        [
+            Input("vp-dataset-radio", "value"),
+            Input("vp-dataset-radio-time", "value"),
+            Input("vp-dataset-radio-graph", "value"),
+        ],
+    )
+    def update_stylesheet(walker, time, graph):
+        """update graph draw stylesheet"""
+        return [
+            {
+                "selector": "node",
+                "style": {
+                    "height": 20,
+                    "width": 20,
+                    "background-color": DATASETS[walker][time][graph]["color"],
+                    "label": "data(name)",
+                    "font-family": "Monospace",
+                    "border-width": "1.5px",
+                    "font-size": 10,
+                },
+            },
+            {
+                "selector": "edge",
+                "style": {
+                    "width": 1.5,
+                    "line-color": "black",
+                },
+            },
+        ]
+
+    @_app.callback(
+        Output("vp-dataset-radio-graph", "options"),
+        Input("vp-dataset-radio-time", "value"),
+    )
+    def option_radio_graph(time):
+        """block rand graph option if time is discrete"""
+        return [
+            {
+                "disabled": True if (time == "discrete" and graph == "rand") else False,
+                "label": graph,
+                "value": graph,
+            }
+            for graph in DATASETS["classic"]["continuous"]
+        ]
+
+    @_app.callback(
+        Output("vp-dataset-radio-time", "options"),
+        Input("vp-dataset-radio-graph", "value"),
+    )
+    def option_radio_time(graph):
+        """block discrete time option if graph is random"""
+        return [
+            {
+                "disabled": True if (graph == "rand" and time == "discrete") else False,
+                "label": time,
+                "value": time,
+            }
+            for time in DATASETS["classic"]
+        ]
+
 
 run_standalone_app(app, app_title, repo_url, layout, callbacks, header_colors, __file__)
 
 if __name__ == "__main__":
-    app.run_server()
+    app.run_server(debug=True)

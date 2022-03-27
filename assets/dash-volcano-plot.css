@@ -14,15 +14,13 @@
     border-color: #CC00CC !important;
     color: #CC00CC !important;
 }
-#vp-graph {
+#vp-graph, #vp-graph-std {
     height: 500px;
 }
-/*#vp-graph-div {*/
-    /*display: inline-block !important;*/
-    /*margin-top: 50px;*/
-    /*margin-left: 50px;*/
-    /*margin-right: 50px;*/
-/*}*/
+#vp-graph-draw {
+   height: 500px;
+   background: white;
+}
 #vp-page-content .rc-slider-track {
     background-color: #1191f3 !important;
 }
@@ -41,7 +39,7 @@
     /*display: block;*/
     /*margin-left: 20%;*/
 /*}*/
-#vp-dataset-radio, #vp-dataset-radio-time, #vp-dataset-radio-graph {
+#vp-dataset-radio, #vp-dataset-radio-time, #vp-dataset-radio-graph, #vp-dataset-radio-draw {
    margin-left: 5%;
 }
 #vp-page-content .rc-slider #vp-dataset-slider {
