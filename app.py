@@ -472,4 +472,4 @@ def callbacks(_app):
 run_standalone_app(app, app_title, repo_url, layout, callbacks, header_colors, __file__)
 
 if __name__ == "__main__":
-    app.run_server(debug=True)
+    app.run_server()
