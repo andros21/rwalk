@@ -200,7 +200,7 @@ def classic_ctime(graph: str, init_site: int, limit: int, nsteps: int):
     if not graph == "rand":
         _dump_to_sql([pdf_df, std_df], [f"crw_{graph}_ct_pdf", f"crw_{graph}_ct_std"])
     else:
-        _dump_to_sql([pdf_df, std_df], [f"crw_{graph}_ct_pdf"])
+        _dump_to_sql([pdf_df], [f"crw_{graph}_ct_pdf"])
 
 
 def quantum_dtime(graph: str, init_site: int, limit: int, nsteps: int):
@@ -338,7 +338,7 @@ def quantum_ctime(graph: str, init_site: int, limit: int, nsteps: int):
     if not graph == "rand":
         _dump_to_sql([pdf_df, std_df], [f"qrw_{graph}_ct_pdf", f"qrw_{graph}_ct_std"])
     else:
-        _dump_to_sql([pdf_df, std_df], [f"qrw_{graph}_ct_pdf"])
+        _dump_to_sql([pdf_df], [f"qrw_{graph}_ct_pdf"])
 
 
 if __name__ == "__main__":
