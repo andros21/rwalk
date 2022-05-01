@@ -191,11 +191,12 @@ def classic_ctime(graph: str, init_site: int, limit: int, nsteps: int):
         sites = np.concatenate(
             (np.arange(0, int(limit * 0.5) + 1, 1), np.arange(-int(limit * 0.5), 0, 1))
         )
-    var = pdf @ sites**2 if not graph == "rand" else None
-    std = np.sqrt(var) if not graph == "rand" else None
     # save tables
+    if not graph == "rand":
+        var = pdf @ sites**2
+        std = np.sqrt(var)
+        std_df = pd.DataFrame(std.T)
     pdf_df = pd.DataFrame(pdf)
-    std_df = pd.DataFrame(std.T) if not graph == "rand" else None
     if not graph == "rand":
         _dump_to_sql([pdf_df, std_df], [f"crw_{graph}_ct_pdf", f"crw_{graph}_ct_std"])
     else:
@@ -328,11 +329,12 @@ def quantum_ctime(graph: str, init_site: int, limit: int, nsteps: int):
         sites = np.concatenate(
             (np.arange(0, int(limit * 0.5) + 1, 1), np.arange(-int(limit * 0.5), 0, 1))
         )
-    var = pdf @ sites**2 if not graph == "rand" else None
-    std = np.sqrt(var) if not graph == "rand" else None
     # save tables
+    if not graph == "rand":
+        var = pdf @ sites**2
+        std = np.sqrt(var)
+        std_df = pd.DataFrame(std.T)
     pdf_df = pd.DataFrame(pdf)
-    std_df = pd.DataFrame(std.T) if not graph == "rand" else None
     if not graph == "rand":
         _dump_to_sql([pdf_df, std_df], [f"qrw_{graph}_ct_pdf", f"qrw_{graph}_ct_std"])
     else:
