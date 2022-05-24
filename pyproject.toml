@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "rwalk"
+version = "0.0.0"
+description = "dash app random walk"
+authors = ["andros21 <andrea.ros21@e.email>"]
+license = "GPL-3.0-only"
+
+[tool.poetry.dependencies]
+python = ">=3.9,<3.11"
+pandas = "^1.4.2"
+numpy = "^1.22.4"
+dash = "^2.4.1"
+networkx = "^2.8.2"
+gunicorn = "^20.1.0"
+scipy = "^1.8.1"
+dash-cytoscape = "^0.3.0"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
