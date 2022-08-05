@@ -9,6 +9,8 @@ name: build rwalk
       - LICENSE
       - README.md
       - fly.toml
+      - .github/workflows/deploy.yml
+      - .github/dependabot.yml
 
 permissions:
   contents: read
