@@ -1,0 +1,89 @@
+---
+name: build rwalk
+
+"on":
+  push:
+    branches:
+      - master
+    paths-ignore:
+      - LICENSE
+      - README.md
+      - fly.toml
+
+permissions:
+  contents: read
+  id-token: write
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build:
+    name: build rwalk
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout project
+        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b
+      - name: setup python
+        uses: actions/setup-python@c4e89fac7e8767b327bbad6cb4d859eda999cf08
+        with:
+          python-version: 3.9
+      - name: install poetry
+        uses: snok/install-poetry@2bf112a0f6979928eb6b011f39700db589c5961e
+        with:
+          virtualenvs-create: false
+      - name: export requirements.txt
+        run: |
+          poetry export --without-hashes -o requirements.txt
+      - name: check cosign version
+        id: cosign-version
+        run: |
+          LATEST=$(curl -sL https://api.github.com/repos/sigstore/cosign/releases/latest | jq -r ".tag_name")
+          echo "cosign version: ${LATEST}"
+          echo "##[set-output name=latest;]${LATEST}"
+      - name: check cosign cache
+        uses: actions/cache@0865c47f36e68161719c5b124609996bb5c40129
+        id: cosign-cache
+        with:
+          path: ~/.cosign
+          key: ${{ runner.os }}-cosign-${{ steps.cosign-version.outputs.latest }}
+      - name: add cosign to path
+        if: steps.cosign-cache.outputs.cache-hit == 'true'
+        run: |
+          echo "HOME=$HOME" >> $GITHUB_ENV
+          echo "PATH=$PATH:$HOME/.cosign" >> $GITHUB_ENV
+      - name: install cosign
+        if: steps.cosign-cache.outputs.cache-hit != 'true'
+        uses: sigstore/cosign-installer@372f03d876de9bfec5079d00fc6cd2485af9a026
+        with:
+          cosign-release: ${{ steps.cosign-version.outputs.latest }}
+      - name: verify python distroless image
+        run: |
+          cosign verify \
+                 --key https://github.com/GoogleContainerTools/distroless \
+                 gcr.io/distroless/python3-debian11:nonroot
+      - name: login ghcr.io
+        uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: extract metadata
+        id: meta
+        uses: docker/metadata-action@98669ae865ea3cffbcbaa878cf57c20bbf1c6c38
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+      - name: build-and-push rwalk
+        uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+      - name: cosign rwalk
+        env:
+          COSIGN_EXPERIMENTAL: 1
+        run: |
+          cosign sign ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:master
