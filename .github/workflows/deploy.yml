@@ -9,6 +9,10 @@ name: flyio deploy
 permissions:
   contents: read
 
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
 jobs:
   deploy:
     name: flyio deploy
@@ -19,20 +23,36 @@ jobs:
     steps:
       - name: checkout project
         uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b
-      - name: Setup python
-        uses: actions/setup-python@c4e89fac7e8767b327bbad6cb4d859eda999cf08
-        with:
-          python-version: 3.9
-      - name: Install poetry
-        uses: snok/install-poetry@2bf112a0f6979928eb6b011f39700db589c5961e
-        with:
-          virtualenvs-create: false
-      - name: Export requirements.txt
+      - name: check cosign version
+        id: cosign-version
         run: |
-          poetry export --without-hashes -o requirements.txt
+          LATEST=$(curl -sL https://api.github.com/repos/sigstore/cosign/releases/latest | jq -r ".tag_name")
+          echo "cosign version: ${LATEST}"
+          echo "##[set-output name=latest;]${LATEST}"
+      - name: check cosign cache
+        uses: actions/cache@0865c47f36e68161719c5b124609996bb5c40129
+        id: cosign-cache
+        with:
+          path: ~/.cosign
+          key: ${{ runner.os }}-cosign-${{ steps.cosign-version.outputs.latest }}
+      - name: add cosign to path
+        if: steps.cosign-cache.outputs.cache-hit == 'true'
+        run: |
+          echo "HOME=$HOME" >> $GITHUB_ENV
+          echo "PATH=$PATH:$HOME/.cosign" >> $GITHUB_ENV
+      - name: install cosign
+        if: steps.cosign-cache.outputs.cache-hit != 'true'
+        uses: sigstore/cosign-installer@372f03d876de9bfec5079d00fc6cd2485af9a026
+        with:
+          cosign-release: ${{ steps.cosign-version.outputs.latest }}
+      - name: verify rwalk image
+        env:
+          COSIGN_EXPERIMENTAL: 1
+        run: |
+          cosign verify ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:master
       - name: flyio deploy
         uses: superfly/flyctl-actions@adbb124b95f2e47566253d95497432c27f4bdd70
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
         with:
-          args: "deploy"
+          args: "deploy --image ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:master"
