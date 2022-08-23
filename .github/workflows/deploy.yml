@@ -49,7 +49,7 @@ jobs:
         env:
           COSIGN_EXPERIMENTAL: 1
         run: |
-          cosign verify ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:master
+          cosign verify ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:master | jq
       - name: flyio deploy
         uses: superfly/flyctl-actions@adbb124b95f2e47566253d95497432c27f4bdd70
         env:
