@@ -1,0 +1,92 @@
+---
+name: build rwalk
+
+"on":
+  push:
+    branches:
+      - master
+    paths-ignore:
+      - LICENSE
+      - README.md
+      - fly.toml
+      - .github/workflows/build.yml
+      - .github/workflows/deploy.yml
+      - .github/dependabot.yml
+
+permissions:
+  contents: read
+  id-token: write
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build:
+    name: build rwalk
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout project
+        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b
+      - name: setup python
+        uses: actions/setup-python@b55428b1882923874294fa556849718a1d7f2ca5
+        with:
+          python-version: 3.9
+      - name: install poetry
+        uses: snok/install-poetry@2bf112a0f6979928eb6b011f39700db589c5961e
+        with:
+          virtualenvs-create: false
+      - name: export requirements.txt
+        run: |
+          poetry export --without-hashes -o requirements.txt
+      - name: check cosign version
+        id: cosign-version
+        run: |
+          LATEST=$(curl -sL https://api.github.com/repos/sigstore/cosign/releases/latest | jq -r ".tag_name")
+          echo "cosign version: ${LATEST}"
+          echo "##[set-output name=latest;]${LATEST}"
+      - name: check cosign cache
+        uses: actions/cache@fd5de65bc895cf536527842281bea11763fefd77
+        id: cosign-cache
+        with:
+          path: ~/.cosign
+          key: ${{ runner.os }}-cosign-${{ steps.cosign-version.outputs.latest }}
+      - name: add cosign to path
+        if: steps.cosign-cache.outputs.cache-hit == 'true'
+        run: |
+          echo "HOME=$HOME" >> $GITHUB_ENV
+          echo "PATH=$PATH:$HOME/.cosign" >> $GITHUB_ENV
+      - name: install cosign
+        if: steps.cosign-cache.outputs.cache-hit != 'true'
+        uses: sigstore/cosign-installer@ced07f21fb1da67979f539bbc6304c16c0677e76
+        with:
+          cosign-release: ${{ steps.cosign-version.outputs.latest }}
+      - name: verify python apko image
+        env:
+          COSIGN_EXPERIMENTAL: 1
+        run: |
+          cosign verify cgr.dev/chainguard/python:latest-glibc | jq
+      - name: login ghcr.io
+        uses: docker/login-action@49ed152c8eca782a232dede0303416e8f356c37b
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: extract metadata
+        id: meta
+        uses: docker/metadata-action@69f6fc9d46f2f8bf0d5491e4aabe0bb8c6a4678a
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+      - name: build-and-push rwalk
+        uses: docker/build-push-action@c84f38281176d4c9cdb1626ffafcd6b3911b5d94
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+      - name: cosign rwalk
+        env:
+          COSIGN_EXPERIMENTAL: 1
+        run: |
+          cosign sign ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:master

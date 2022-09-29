@@ -6,10 +6,20 @@
   </a>
   <br>
   <br>
+  <a href="https://github.com/andros21/rwalk/actions/workflows/build.yml">
+    <img src="https://img.shields.io/github/workflow/status/andros21/rwalk/build%20rwalk?label=build&logo=github&logoColor=white&style=for-the-badge" alt="build">
+  </a>
   <a href="https://github.com/andros21/rwalk/actions/workflows/deploy.yml">
-    <img src="https://img.shields.io/github/workflow/status/andros21/rwalk/flyio%20deploy?label=fly.io&logo=apacherocketmq&logoColor=white&style=for-the-badge" alt="Meson CI">
+    <img src="https://img.shields.io/github/workflow/status/andros21/rwalk/flyio%20deploy?label=fly.io&logo=apacherocketmq&logoColor=white&style=for-the-badge" alt="deploy">
   </a>
   <a href="https://github.com/andros21/rwalk/blob/master/LICENSE">
-    <img src="https://img.shields.io/github/license/andros21/rwalk?color=blue&label=LICENSE&style=for-the-badge" alt="License"></a>
-  <h3 align="center">dash app <a href="https://en.wikipedia.org/wiki/Random_walk">random walk</a></h3>
+    <img src="https://img.shields.io/github/license/andros21/rwalk?color=blue&label=LICENSE&logo=gnu&style=for-the-badge" alt="License"></a>
+  <h3 align="center">a dash app for <a href="https://en.wikipedia.org/wiki/Random_walk">random walk</a></h3>
 </div>
+
+<br><br>
+
+#### Acknowledgements
+
+css template contained in `assets/` was tweaked starting from
+[dash-volcano-plot](https://github.com/plotly/dash-bio/tree/master/tests/dashbio_demos/dash-volcano-plot)

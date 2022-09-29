@@ -1,17 +1,27 @@
-ARG BASE_IMAGE=slim-bullseye
-ARG PYTHON_VERSION=3.9
+# Apko Chainguard Images!
+# => https://github.com/chainguard-dev/apko
+# => https://github.com/chainguard-images
+#
 
-FROM python:${PYTHON_VERSION}-${BASE_IMAGE}
+# Build a virtualenv using apko python-glibc image
+# => https://github.com/chainguard-images/python
+#
+FROM cgr.dev/chainguard/python:latest-glibc AS venv
+WORKDIR /home/nonroot
+RUN ["/usr/bin/python3", "-m" , "venv", "--upgrade-deps", ".venv"]
+COPY requirements.txt requirements.txt
+RUN [".venv/bin/pip", "install", "--disable-pip-version-check", "-r", "requirements.txt"]
 
-RUN mkdir -p /app
-WORKDIR /app
+# Run random walk simulation
+#
+FROM venv AS rwalker
+COPY rwalker.py rwalker.py
+RUN [".venv/bin/python3", "rwalker.py"]
 
-COPY requirements.txt .
-RUN python -m pip install -r requirements.txt
-
+# Dash app on apko python-glibc
+#   * Copy simulation data results into data
+#
+FROM venv
 COPY . .
-
-EXPOSE 8080
-
-# run rwalker, save results and start rwalk dash app
-CMD python rwalker.py && gunicorn --bind :8080 --workers 2 rwalk:app
+COPY --from=rwalker /home/nonroot/data data
+ENTRYPOINT [".venv/bin/gunicorn", "--bind", ":8080", "--workers", "2", "rwalk:app"]
