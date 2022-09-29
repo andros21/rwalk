@@ -62,11 +62,11 @@ jobs:
         uses: sigstore/cosign-installer@ced07f21fb1da67979f539bbc6304c16c0677e76
         with:
           cosign-release: ${{ steps.cosign-version.outputs.latest }}
-      - name: verify python distroless image
+      - name: verify python apko image
+        env:
+          COSIGN_EXPERIMENTAL: 1
         run: |
-          cosign verify \
-                 --key https://github.com/GoogleContainerTools/distroless \
-                 gcr.io/distroless/python3-debian11:nonroot | jq
+          cosign verify cgr.dev/chainguard/python:latest-glibc | jq
       - name: login ghcr.io
         uses: docker/login-action@49ed152c8eca782a232dede0303416e8f356c37b
         with:
