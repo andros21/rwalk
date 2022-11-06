@@ -22,15 +22,15 @@ jobs:
       url: https://rwalk.fly.dev
     steps:
       - name: checkout project
-        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b
+        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
       - name: check cosign version
         id: cosign-version
         run: |
           LATEST=$(curl -sL https://api.github.com/repos/sigstore/cosign/releases/latest | jq -r ".tag_name")
           echo "cosign version: ${LATEST}"
-          echo "##[set-output name=latest;]${LATEST}"
+          echo "latest=${LATEST}" >> $GITHUB_OUTPUT
       - name: check cosign cache
-        uses: actions/cache@fd5de65bc895cf536527842281bea11763fefd77
+        uses: actions/cache@9b0c1fce7a93df8e3bb8926b0d6e9d89e92f20a7
         id: cosign-cache
         with:
           path: ~/.cosign
@@ -42,7 +42,7 @@ jobs:
           echo "PATH=$PATH:$HOME/.cosign" >> $GITHUB_ENV
       - name: install cosign
         if: steps.cosign-cache.outputs.cache-hit != 'true'
-        uses: sigstore/cosign-installer@ced07f21fb1da67979f539bbc6304c16c0677e76
+        uses: sigstore/cosign-installer@9becc617647dfa20ae7b1151972e9b3a2c338a2b
         with:
           cosign-release: ${{ steps.cosign-version.outputs.latest }}
       - name: verify rwalk image

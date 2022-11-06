@@ -28,13 +28,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: checkout project
-        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b
+        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
       - name: setup python
-        uses: actions/setup-python@b55428b1882923874294fa556849718a1d7f2ca5
+        uses: actions/setup-python@13ae5bb136fac2878aff31522b9efb785519f984
         with:
           python-version: 3.9
       - name: install poetry
-        uses: snok/install-poetry@2bf112a0f6979928eb6b011f39700db589c5961e
+        uses: snok/install-poetry@d45b6d76012debf457ab49dffc7fb7b2efe8071d
         with:
           virtualenvs-create: false
       - name: export requirements.txt
@@ -45,9 +45,9 @@ jobs:
         run: |
           LATEST=$(curl -sL https://api.github.com/repos/sigstore/cosign/releases/latest | jq -r ".tag_name")
           echo "cosign version: ${LATEST}"
-          echo "##[set-output name=latest;]${LATEST}"
+          echo "latest=${LATEST}" >> $GITHUB_OUTPUT
       - name: check cosign cache
-        uses: actions/cache@fd5de65bc895cf536527842281bea11763fefd77
+        uses: actions/cache@9b0c1fce7a93df8e3bb8926b0d6e9d89e92f20a7
         id: cosign-cache
         with:
           path: ~/.cosign
@@ -59,7 +59,7 @@ jobs:
           echo "PATH=$PATH:$HOME/.cosign" >> $GITHUB_ENV
       - name: install cosign
         if: steps.cosign-cache.outputs.cache-hit != 'true'
-        uses: sigstore/cosign-installer@ced07f21fb1da67979f539bbc6304c16c0677e76
+        uses: sigstore/cosign-installer@9becc617647dfa20ae7b1151972e9b3a2c338a2b
         with:
           cosign-release: ${{ steps.cosign-version.outputs.latest }}
       - name: verify python apko image
@@ -68,18 +68,18 @@ jobs:
         run: |
           cosign verify cgr.dev/chainguard/python:latest-glibc | jq
       - name: login ghcr.io
-        uses: docker/login-action@49ed152c8eca782a232dede0303416e8f356c37b
+        uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: extract metadata
         id: meta
-        uses: docker/metadata-action@69f6fc9d46f2f8bf0d5491e4aabe0bb8c6a4678a
+        uses: docker/metadata-action@57396166ad8aefe6098280995947635806a0e6ea
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
       - name: build-and-push rwalk
-        uses: docker/build-push-action@c84f38281176d4c9cdb1626ffafcd6b3911b5d94
+        uses: docker/build-push-action@c56af957549030174b10d6867f20e78cfd7debc5
         with:
           context: .
           push: true
