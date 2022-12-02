@@ -17,9 +17,9 @@
   <h3 align="center">a dash app for <a href="https://en.wikipedia.org/wiki/Random_walk">random walk</a></h3>
 </div>
 
-<br><br>
-
-#### Acknowledgements
-
-css template contained in `assets/` was tweaked starting from
-[dash-volcano-plot](https://github.com/plotly/dash-bio/tree/master/tests/dashbio_demos/dash-volcano-plot)
+<div align="center">
+  <hr width="13%" height="0.07em">
+  <sup>
+    <b>Acknowledgements:</b> css template contained in <code>assets/</code><br> was tweaked starting from <a href="https://github.com/plotly/dash-bio/tree/master/tests/dashbio_demos/dash-volcano-plot">dash-volcano-plot</a>
+  </sup>
+</div>
