@@ -211,7 +211,7 @@ def layout():
                                             'In the "Plot" tab, you can play with the evolution of '
                                             "density function and its associated std deviation for all these cases."
                                         ),
-                                        html.P("Quantum random walk is must faster!"),
+                                        html.P("Quantum random walk is much faster!"),
                                     ],
                                 ),
                             ),
