@@ -40,28 +40,8 @@ jobs:
       - name: export requirements.txt
         run: |
           poetry export --without-hashes -o requirements.txt
-      - name: check cosign version
-        id: cosign-version
-        run: |
-          LATEST=$(curl -sL https://api.github.com/repos/sigstore/cosign/releases/latest | jq -r ".tag_name")
-          echo "cosign version: ${LATEST}"
-          echo "latest=${LATEST}" >> $GITHUB_OUTPUT
-      - name: check cosign cache
-        uses: actions/cache@c1a5de879eb890d062a85ee0252d6036480b1fe2
-        id: cosign-cache
-        with:
-          path: ~/.cosign
-          key: ${{ runner.os }}-cosign-${{ steps.cosign-version.outputs.latest }}
-      - name: add cosign to path
-        if: steps.cosign-cache.outputs.cache-hit == 'true'
-        run: |
-          echo "HOME=$HOME" >> $GITHUB_ENV
-          echo "PATH=$PATH:$HOME/.cosign" >> $GITHUB_ENV
       - name: install cosign
-        if: steps.cosign-cache.outputs.cache-hit != 'true'
         uses: sigstore/cosign-installer@9becc617647dfa20ae7b1151972e9b3a2c338a2b
-        with:
-          cosign-release: ${{ steps.cosign-version.outputs.latest }}
       - name: verify python apko image
         env:
           COSIGN_EXPERIMENTAL: 1
