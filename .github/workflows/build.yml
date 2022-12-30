@@ -2,6 +2,7 @@
 name: build rwalk
 
 "on":
+  workflow_dispatch:
   push:
     branches:
       - master
@@ -29,6 +30,13 @@ jobs:
     steps:
       - name: checkout project
         uses: actions/checkout@755da8c3cf115ac066823e79a1e1788f8940201b
+      - name: get base image
+        id: base
+        run: |
+          set -x
+          DIGEST="$(awk -F '=' '/ARG DIGEST/ {print $2}' Dockerfile)"
+          echo "Base image: cgr.dev/chainguard/python@${DIGEST}"
+          echo "image=cgr.dev/chainguard/python@${DIGEST}" >> $GITHUB_OUTPUT
       - name: setup python
         uses: actions/setup-python@5ccb29d8773c3f3f653e1705f474dfaa8a06a912
         with:
@@ -42,31 +50,46 @@ jobs:
           poetry export --without-hashes -o requirements.txt
       - name: install cosign
         uses: sigstore/cosign-installer@9becc617647dfa20ae7b1151972e9b3a2c338a2b
-      - name: verify python apko image
+      - name: verify base image signature
         env:
           COSIGN_EXPERIMENTAL: 1
         run: |
-          cosign verify cgr.dev/chainguard/python:latest-glibc | jq
+          cosign verify "${{ steps.base.outputs.image }}" | jq
+      - name: verify base image vuln
+        env:
+          COSIGN_EXPERIMENTAL: 1
+        run: |
+          set -x
+          CVE_COUNT=(-1 -1)
+          CVE_COUNT=($(cosign download attestation "${{ steps.base.outputs.image }}" \
+            | jq -r .payload | base64 -d \
+            | jq '.predicate.scanner.result.runs[0].results | length' | xargs))
+          echo "TRIVY_COUNT: ${CVE_COUNT[0]}"
+          echo "GRYPE_COUNT: ${CVE_COUNT[1]}"
       - name: login ghcr.io
         uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: extract metadata
-        id: meta
-        uses: docker/metadata-action@57396166ad8aefe6098280995947635806a0e6ea
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-      - name: build-and-push rwalk
+      - name: build rwalk (devel)
+        id: docker
         uses: docker/build-push-action@c56af957549030174b10d6867f20e78cfd7debc5
         with:
           context: .
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-      - name: cosign rwalk
-        env:
-          COSIGN_EXPERIMENTAL: 1
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:devel
+      - name: smoke test
         run: |
-          cosign sign ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:master
+          set -x
+          docker run --rm --detach -p 8080:8080 --name smoke_rwalk \
+            "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.docker.outputs.digest }}"
+          sleep 3
+          curl -X GET http://localhost:8080
+          docker logs smoke_rwalk
+          docker stop smoke_rwalk
+      #- name: cosign rwalk
+        #env:
+          #COSIGN_EXPERIMENTAL: 1
+        #run: |
+          #cosign sign ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:master
