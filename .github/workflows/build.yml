@@ -12,6 +12,7 @@ name: build rwalk
       - fly.toml
       - .github/workflows/build.yml
       - .github/workflows/deploy.yml
+      - .github/workflows/vuln.yml
       - .github/dependabot.yml
 
 permissions:
