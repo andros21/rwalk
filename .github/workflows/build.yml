@@ -88,8 +88,13 @@ jobs:
           curl -X GET http://localhost:8080
           docker logs smoke_rwalk
           docker stop smoke_rwalk
-      #- name: cosign rwalk
-        #env:
-          #COSIGN_EXPERIMENTAL: 1
-        #run: |
-          #cosign sign ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:master
+      - name: cosign rwalk
+        env:
+          COSIGN_EXPERIMENTAL: 1
+        run: |
+          cosign sign "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.docker.outputs.digest }}"
+      - name: install crane
+        uses: imjasonh/setup-crane@e82f1b9a8007d399333baba4d75915558e9fb6a4
+      - name: tag rwalk (latest)
+        run: |
+          crane tag "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:devel" latest
