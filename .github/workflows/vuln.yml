@@ -1,5 +1,5 @@
 ---
-name: compare vulns
+name: check vulns
 
 "on":
   workflow_dispatch:
@@ -11,7 +11,7 @@ env:
 
 jobs:
   check:
-    name: compare vulns
+    name: check vulns
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -46,4 +46,4 @@ jobs:
             | jq '.predicate.scanner.result.runs[0].results | length' | xargs))
           echo "TRIVY_COUNT: ${CVE_COUNT[0]} vs ${CVE_LATEST_COUNT[0]}"
           echo "GRYPE_COUNT: ${CVE_COUNT[1]} vs ${CVE_LATEST_COUNT[1]}"
-          [ ${CVE_COUNT[0]} -le ${CVE_LATEST_COUNT[0]} ] && [ ${CVE_COUNT[1]} -le ${CVE_LATEST_COUNT[1] ]
+          [ ${CVE_COUNT[0]} -le ${CVE_LATEST_COUNT[0]} ] && [ ${CVE_COUNT[1]} -le ${CVE_LATEST_COUNT[1]} ]
