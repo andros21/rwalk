@@ -4,7 +4,7 @@ name: check vulns
 "on":
   workflow_dispatch:
   schedule:
-    - cron: '0 1 * * *'
+    - cron: '0 3 * * *'
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
@@ -44,6 +44,18 @@ jobs:
           CVE_LATEST_COUNT=($(cosign download attestation cgr.dev/chainguard/python:latest-glibc \
             | jq -r .payload | base64 -d \
             | jq '.predicate.scanner.result.runs[0].results | length' | xargs))
+          # stdout job summary
           echo "TRIVY_COUNT: ${CVE_COUNT[0]} vs ${CVE_LATEST_COUNT[0]}"
           echo "GRYPE_COUNT: ${CVE_COUNT[1]} vs ${CVE_LATEST_COUNT[1]}"
-          [ ${CVE_COUNT[0]} -le ${CVE_LATEST_COUNT[0]} ] && [ ${CVE_COUNT[1]} -le ${CVE_LATEST_COUNT[1]} ]
+          # markdown job summary
+          echo "### Check vulnerabilities summary" >> $GITHUB_STEP_SUMMARY
+          echo >> $GITHUB_STEP_SUMMARY
+          echo "|        |  TRIVY  |  GRYPE  |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|:-------:|:-------:|" >> $GITHUB_STEP_SUMMARY
+          echo "| flyio  |  ${CVE_COUNT[0]}  |  ${CVE_COUNT[1]}  |" >> $GITHUB_STEP_SUMMARY
+          echo "| latest |  ${CVE_LATEST_COUNT[0]}  |  ${CVE_LATEST_COUNT[1]}  |" >> $GITHUB_STEP_SUMMARY
+          echo >> $GITHUB_STEP_SUMMARY
+          # job fail logic
+          [ ${CVE_COUNT[0]} -le ${CVE_LATEST_COUNT[0]} ] && [ ${CVE_COUNT[1]} -le ${CVE_LATEST_COUNT[1]} ] \
+            || echo "#### rwalk deployed image insecure :x:" >> $GITHUB_STEP_SUMMARY
+          echo "#### rwalk deployed image secure :heavy_check_mark:" >> $GITHUB_STEP_SUMMARY
