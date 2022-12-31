@@ -8,6 +8,7 @@ name: check vulns
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
+  BASE_IMAGE: cgr.dev/chainguard/python
 
 jobs:
   check:
@@ -23,8 +24,8 @@ jobs:
         run: |
           set -x
           DIGEST="$(awk -F '=' '/ARG DIGEST/ {print $2}' Dockerfile)"
-          echo "Base image: cgr.dev/chainguard/python@${DIGEST}"
-          echo "image=cgr.dev/chainguard/python@${DIGEST}" >> $GITHUB_OUTPUT
+          echo "Base image: ${BASE_IMAGE}@${DIGEST}"
+          echo "image=${BASE_IMAGE}@${DIGEST}" >> $GITHUB_OUTPUT
       - name: install cosign
         uses: sigstore/cosign-installer@9becc617647dfa20ae7b1151972e9b3a2c338a2b
       # compare cve from latest base image (chainguard-images release)
@@ -41,7 +42,7 @@ jobs:
           CVE_COUNT=($(cosign download attestation "${{ steps.base.outputs.image }}" \
             | jq -r .payload | base64 -d \
             | jq '.predicate.scanner.result.runs[0].results | length' | xargs))
-          CVE_LATEST_COUNT=($(cosign download attestation cgr.dev/chainguard/python:latest-glibc \
+          CVE_LATEST_COUNT=($(cosign download attestation ${BASE_IMAGE}:latest-glibc \
             | jq -r .payload | base64 -d \
             | jq '.predicate.scanner.result.runs[0].results | length' | xargs))
           # stdout job summary
