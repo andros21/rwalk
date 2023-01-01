@@ -23,6 +23,7 @@ permissions:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
+  BASE_IMAGE: cgr.dev/chainguard/python
 
 jobs:
   build:
@@ -36,8 +37,8 @@ jobs:
         run: |
           set -x
           DIGEST="$(awk -F '=' '/ARG DIGEST/ {print $2}' Dockerfile)"
-          echo "Base image: cgr.dev/chainguard/python@${DIGEST}"
-          echo "image=cgr.dev/chainguard/python@${DIGEST}" >> $GITHUB_OUTPUT
+          echo "Base image: ${BASE_IMAGE}@${DIGEST}"
+          echo "image=${BASE_IMAGE}@${DIGEST}" >> $GITHUB_OUTPUT
       - name: setup python
         uses: actions/setup-python@5ccb29d8773c3f3f653e1705f474dfaa8a06a912
         with:
