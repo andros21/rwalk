@@ -5,6 +5,7 @@ name: check vulns
   workflow_dispatch:
   schedule:
     - cron: '0 3 * * *'
+
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
@@ -42,7 +43,7 @@ jobs:
           CVE_COUNT=($(cosign download attestation "${{ steps.base.outputs.image }}" \
             | jq -r .payload | base64 -d \
             | jq '.predicate.scanner.result.runs[0].results | length' | xargs))
-          CVE_LATEST_COUNT=($(cosign download attestation ${BASE_IMAGE}:latest-glibc \
+          CVE_LATEST_COUNT=($(cosign download attestation ${BASE_IMAGE}:latest-dev \
             | jq -r .payload | base64 -d \
             | jq '.predicate.scanner.result.runs[0].results | length' | xargs))
           # stdout job summary
