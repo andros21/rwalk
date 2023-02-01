@@ -83,7 +83,7 @@ def _gen_laplacian_matrix(
     if not np.allclose(A, A.T, rtol=1e-5, atol=1e-8):
         _die(f"[ERROR] adjacency matrix for {graph} graph it's not symmetric")
     if draw:
-        G = nx.from_numpy_matrix(A)
+        G = nx.from_numpy_array(A)
         cyto_json = nx.cytoscape_data(G)
         cyto_json = _fix_cyto_json(graph, cyto_json)
         with gzip.open(

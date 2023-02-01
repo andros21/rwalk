@@ -5,6 +5,7 @@ name: check vulns
   workflow_dispatch:
   schedule:
     - cron: '0 3 * * *'
+
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
@@ -18,7 +19,7 @@ jobs:
       contents: read
     steps:
       - name: checkout project
-        uses: actions/checkout@755da8c3cf115ac066823e79a1e1788f8940201b
+        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c
       - name: get base image
         id: base
         run: |
@@ -42,7 +43,7 @@ jobs:
           CVE_COUNT=($(cosign download attestation "${{ steps.base.outputs.image }}" \
             | jq -r .payload | base64 -d \
             | jq '.predicate.scanner.result.runs[0].results | length' | xargs))
-          CVE_LATEST_COUNT=($(cosign download attestation ${BASE_IMAGE}:latest-glibc \
+          CVE_LATEST_COUNT=($(cosign download attestation ${BASE_IMAGE}:latest-dev \
             | jq -r .payload | base64 -d \
             | jq '.predicate.scanner.result.runs[0].results | length' | xargs))
           # stdout job summary
@@ -58,5 +59,6 @@ jobs:
           echo >> $GITHUB_STEP_SUMMARY
           # job fail logic
           [ ${CVE_COUNT[0]} -le ${CVE_LATEST_COUNT[0]} ] && [ ${CVE_COUNT[1]} -le ${CVE_LATEST_COUNT[1]} ] \
-            || echo "#### rwalk deployed image insecure :x:" >> $GITHUB_STEP_SUMMARY
+            || echo "#### rwalk deployed image insecure :x:" >> $GITHUB_STEP_SUMMARY \
+            && exit 1
           echo "#### rwalk deployed image secure :heavy_check_mark:" >> $GITHUB_STEP_SUMMARY
