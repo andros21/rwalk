@@ -3,10 +3,10 @@
 # => https://github.com/chainguard-images
 #
 
-# Build a virtualenv using apko python-glibc image
+# Build a virtualenv using apko python-latest-dev image
 # => https://github.com/chainguard-images/images/tree/main/images/python
 #
-ARG DIGEST=sha256:ffb2d210e914d3494f3a2ca49cb7815bd28936a255674a9681b562a9462ce330
+ARG DIGEST=sha256:af051248511b7ee7e76d514f60d8cb7b0b0f5f926e7b464b548a5cf742c73789
 FROM cgr.dev/chainguard/python@${DIGEST} AS venv
 WORKDIR /home/nonroot
 RUN ["/usr/bin/python3", "-m" , "venv", ".venv"]
@@ -19,7 +19,7 @@ FROM venv AS rwalker
 COPY rwalker.py rwalker.py
 RUN [".venv/bin/python3", "rwalker.py"]
 
-# Dash app on apko python-glibc
+# Dash app on apko python-latest-dev
 #   * Copy simulation data results into data
 #
 FROM venv
