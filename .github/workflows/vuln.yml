@@ -59,6 +59,6 @@ jobs:
           echo >> $GITHUB_STEP_SUMMARY
           # job fail logic
           [ ${CVE_COUNT[0]} -le ${CVE_LATEST_COUNT[0]} ] && [ ${CVE_COUNT[1]} -le ${CVE_LATEST_COUNT[1]} ] \
-            || echo "#### rwalk deployed image insecure :x:" >> $GITHUB_STEP_SUMMARY \
-            && exit 1
+            || (echo "#### rwalk deployed image insecure :x:" >> $GITHUB_STEP_SUMMARY \
+            && exit 1)
           echo "#### rwalk deployed image secure :heavy_check_mark:" >> $GITHUB_STEP_SUMMARY
