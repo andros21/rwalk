@@ -53,13 +53,9 @@ jobs:
       - name: install cosign
         uses: sigstore/cosign-installer@c3667d99424e7e6047999fb6246c0da843953c65
       - name: verify base image signature
-        env:
-          COSIGN_EXPERIMENTAL: 1
         run: |
           cosign verify "${{ steps.base.outputs.image }}" | jq
       - name: verify base image vuln
-        env:
-          COSIGN_EXPERIMENTAL: 1
         run: |
           set -x
           CVE_COUNT=(-1 -1)
@@ -94,8 +90,6 @@ jobs:
           docker logs smoke_rwalk
           docker stop smoke_rwalk
       - name: cosign rwalk
-        env:
-          COSIGN_EXPERIMENTAL: 1
         run: |
           cosign sign "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.docker.outputs.digest }}"
       - name: install crane
