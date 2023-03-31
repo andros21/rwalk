@@ -28,7 +28,11 @@ jobs:
         uses: sigstore/cosign-installer@c3667d99424e7e6047999fb6246c0da843953c65
       - name: verify rwalk image
         run: |
-          cosign verify "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest" | jq
+          cosign verify \
+             --certificate-identity \
+             'https://github.com/andros21/rwalk/.github/workflows/build.yml@refs/heads/master' \
+             --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' \
+             "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest" | jq .
       - name: flyio deploy
         uses: superfly/flyctl-actions@adbb124b95f2e47566253d95497432c27f4bdd70
         env:

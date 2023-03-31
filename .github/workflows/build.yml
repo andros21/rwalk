@@ -12,7 +12,6 @@ name: build rwalk
       - fly.toml
       - .github/workflows/build.yml
       - .github/workflows/deploy.yml
-      - .github/workflows/vuln.yml
       - .github/dependabot.yml
 
 permissions:
@@ -54,16 +53,11 @@ jobs:
         uses: sigstore/cosign-installer@c3667d99424e7e6047999fb6246c0da843953c65
       - name: verify base image signature
         run: |
-          cosign verify "${{ steps.base.outputs.image }}" | jq
-      - name: verify base image vuln
-        run: |
-          set -x
-          CVE_COUNT=(-1 -1)
-          CVE_COUNT=($(cosign download attestation "${{ steps.base.outputs.image }}" \
-            | jq -r .payload | base64 -d \
-            | jq '.predicate.scanner.result.runs[0].results | length' | xargs))
-          echo "TRIVY_COUNT: ${CVE_COUNT[0]}"
-          echo "GRYPE_COUNT: ${CVE_COUNT[1]}"
+          cosign verify \
+            --certificate-identity \
+            'https://github.com/chainguard-images/images/.github/workflows/release.yaml@refs/heads/main' \
+            --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' \
+            "${{ steps.base.outputs.image }}" | jq .
       - name: login ghcr.io
         uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a
         with:
@@ -91,7 +85,7 @@ jobs:
           docker stop smoke_rwalk
       - name: cosign rwalk
         run: |
-          cosign sign "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.docker.outputs.digest }}"
+          cosign sign -y "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.docker.outputs.digest }}"
       - name: install crane
         uses: imjasonh/setup-crane@00c9e93efa4e1138c9a7a5c594acd6c75a2fbf0c
       - name: tag rwalk (latest)
