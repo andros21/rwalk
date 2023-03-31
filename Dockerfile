@@ -3,11 +3,15 @@
 # => https://github.com/chainguard-images
 #
 
-# Build a virtualenv using apko python-glibc image
+# cgr.dev/chainguard/python:latest digest for deploy
 # => https://github.com/chainguard-images/images/tree/main/images/python
 #
-ARG DIGEST=sha256:ffb2d210e914d3494f3a2ca49cb7815bd28936a255674a9681b562a9462ce330
-FROM cgr.dev/chainguard/python@${DIGEST} AS venv
+ARG DIGEST=sha256:7b03b779f5dd6081901a33470327e4a4a8d4a4bd64e2278059622200fd074e1b
+
+# cgr.dev/chainguard/python:latest-dev for build
+# => https://github.com/chainguard-images/images/tree/main/images/python
+#
+FROM cgr.dev/chainguard/python:latest-dev AS venv
 WORKDIR /home/nonroot
 RUN ["/usr/bin/python3", "-m" , "venv", ".venv"]
 COPY requirements.txt requirements.txt
@@ -19,10 +23,13 @@ FROM venv AS rwalker
 COPY rwalker.py rwalker.py
 RUN [".venv/bin/python3", "rwalker.py"]
 
-# Dash app on apko python-glibc
-#   * Copy simulation data results into data
+# Dash app using cgr.dev/chainguard/python:latest
+#  * Copy venv from st stage
+#  * Copy simulation data results from nd stage
 #
-FROM venv
+FROM cgr.dev/chainguard/python@${DIGEST}
+WORKDIR /home/nonroot
 COPY . .
-COPY --from=rwalker /home/nonroot/data data
+COPY --from=venv /home/nonroot/.venv .venv
+COPY --from=rwalker /home/nonroot/data /data
 ENTRYPOINT [".venv/bin/gunicorn", "--bind", ":8080", "--workers", "2", "rwalk:app"]
