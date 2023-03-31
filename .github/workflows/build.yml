@@ -12,7 +12,6 @@ name: build rwalk
       - fly.toml
       - .github/workflows/build.yml
       - .github/workflows/deploy.yml
-      - .github/workflows/vuln.yml
       - .github/dependabot.yml
 
 permissions:
@@ -31,7 +30,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: checkout project
-        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c
+        uses: actions/checkout@8f4b7f84864484a7bf31766abe9204da3cbe65b3
       - name: get base image
         id: base
         run: |
@@ -41,8 +40,6 @@ jobs:
           echo "image=${BASE_IMAGE}@${DIGEST}" >> $GITHUB_OUTPUT
       - name: setup python
         uses: actions/setup-python@d27e3f3d7c64b4bbf8e4abfb9b63b83e846e0435
-        with:
-          python-version: 3.9
       - name: install poetry
         uses: snok/install-poetry@d45b6d76012debf457ab49dffc7fb7b2efe8071d
         with:
@@ -51,23 +48,14 @@ jobs:
         run: |
           poetry export --without-hashes -o requirements.txt
       - name: install cosign
-        uses: sigstore/cosign-installer@9becc617647dfa20ae7b1151972e9b3a2c338a2b
+        uses: sigstore/cosign-installer@c3667d99424e7e6047999fb6246c0da843953c65
       - name: verify base image signature
-        env:
-          COSIGN_EXPERIMENTAL: 1
         run: |
-          cosign verify "${{ steps.base.outputs.image }}" | jq
-      - name: verify base image vuln
-        env:
-          COSIGN_EXPERIMENTAL: 1
-        run: |
-          set -x
-          CVE_COUNT=(-1 -1)
-          CVE_COUNT=($(cosign download attestation "${{ steps.base.outputs.image }}" \
-            | jq -r .payload | base64 -d \
-            | jq '.predicate.scanner.result.runs[0].results | length' | xargs))
-          echo "TRIVY_COUNT: ${CVE_COUNT[0]}"
-          echo "GRYPE_COUNT: ${CVE_COUNT[1]}"
+          cosign verify \
+            --certificate-identity \
+            'https://github.com/chainguard-images/images/.github/workflows/release.yaml@refs/heads/main' \
+            --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' \
+            "${{ steps.base.outputs.image }}" | jq .
       - name: login ghcr.io
         uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a
         with:
@@ -94,12 +82,10 @@ jobs:
           docker logs smoke_rwalk
           docker stop smoke_rwalk
       - name: cosign rwalk
-        env:
-          COSIGN_EXPERIMENTAL: 1
         run: |
-          cosign sign "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.docker.outputs.digest }}"
+          cosign sign -y "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.docker.outputs.digest }}"
       - name: install crane
-        uses: imjasonh/setup-crane@e82f1b9a8007d399333baba4d75915558e9fb6a4
+        uses: imjasonh/setup-crane@00c9e93efa4e1138c9a7a5c594acd6c75a2fbf0c
       - name: tag rwalk (latest)
         run: |
           crane tag "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:devel" latest
