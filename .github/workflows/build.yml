@@ -46,7 +46,7 @@ jobs:
           virtualenvs-create: false
       - name: export requirements.txt
         run: |
-          poetry export --without-hashes -o requirements.txt
+          poetry export -o requirements.txt
       - name: install cosign
         uses: sigstore/cosign-installer@c3667d99424e7e6047999fb6246c0da843953c65
       - name: verify base image signature
