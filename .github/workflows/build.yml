@@ -80,7 +80,7 @@ jobs:
           docker run --rm --detach -p 8080:8080 --name smoke_rwalk \
             "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.docker.outputs.digest }}"
           sleep 3
-          curl -X GET http://localhost:8080
+          curl -X GET http://localhost:8080 || (docker logs smoke_rwalk && exit 1)
           docker logs smoke_rwalk
           docker stop smoke_rwalk
       - name: cosign rwalk
