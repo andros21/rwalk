@@ -37,7 +37,7 @@ jobs:
           set -x
           DIGEST="$(awk -F '=' '/ARG DIGEST/ {print $2}' Dockerfile)"
           echo "Base image: ${BASE_IMAGE}@${DIGEST}"
-          echo "image=${BASE_IMAGE}@${DIGEST}" >> $GITHUB_OUTPUT
+          echo "image=${BASE_IMAGE}@${DIGEST}" >> "$GITHUB_OUTPUT"
       - name: setup python
         uses: actions/setup-python@57ded4d7d5e986d7296eab16560982c6dd7c923b
         with:
@@ -73,7 +73,7 @@ jobs:
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:devel
           # action fail with
           # ERROR: attestations are not supported by the current buildkitd
-          #sbom: true
+          # sbom: true
       - name: smoke test
         run: |
           set -x
