@@ -22,6 +22,8 @@ jobs:
       name: flyio
       url: https://rwalk.fly.dev
     steps:
+      - name: checkout project
+        uses: actions/checkout@8f4b7f84864484a7bf31766abe9204da3cbe65b3
       - name: install cosign
         uses: sigstore/cosign-installer@204a51a57a74d190b284a0ce69b44bc37201f343
       - name: verify rwalk image
