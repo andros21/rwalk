@@ -3,11 +3,6 @@
 # => https://github.com/chainguard-images
 #
 
-# cgr.dev/chainguard/python:latest digest for deploy
-# => https://github.com/chainguard-images/images/tree/main/images/python
-#
-ARG DIGEST=sha256:272572b87a8c7572a53aa4505387fabf93489f0199311dbb4ad4edbb9d39115a
-
 # cgr.dev/chainguard/python:latest-dev for build
 # => https://github.com/chainguard-images/images/tree/main/images/python
 #
@@ -23,13 +18,15 @@ FROM venv AS rwalker
 COPY rwalker.py rwalker.py
 RUN [".venv/bin/python3", "rwalker.py"]
 
-# Dash app using cgr.dev/chainguard/python:latest
+# cgr.dev/chainguard/python:latest digest for deploy
+# => https://github.com/chainguard-images/images/tree/main/images/python
 #  * Copy venv from st stage
 #  * Copy simulation data results from nd stage
 #
-FROM cgr.dev/chainguard/python@${DIGEST}
+FROM cgr.dev/chainguard/python:latest@sha256:8e95784d77b130e37a44080b726efb429337205da1c3dab13618e82166a04b41
 WORKDIR /home/nonroot
 COPY . .
 COPY --from=venv /home/nonroot/.venv .venv
 COPY --from=rwalker /home/nonroot/data /data
+EXPOSE 8080
 ENTRYPOINT [".venv/bin/gunicorn", "--bind", ":8080", "--workers", "2", "rwalk:app"]
