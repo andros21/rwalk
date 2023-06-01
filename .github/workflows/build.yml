@@ -58,7 +58,7 @@ jobs:
             'https://github.com/chainguard-images/images/.github/workflows/release.yaml@refs/heads/main' \
             --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' \
             "${{ steps.base.outputs.image }}" | jq .
-      - name: set up docker buildx
+      - name: docker buildx
         id: buildx
         uses: docker/setup-buildx-action@4b4e9c3e2d4531116a6f8ba8e71fc6e2cb6e6c8c
       - name: login ghcr.io
