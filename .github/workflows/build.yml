@@ -35,11 +35,11 @@ jobs:
         id: base
         run: |
           set -x
-          DIGEST="$(awk -F '=' '/ARG DIGEST/ {print $2}' Dockerfile)"
-          echo "Base image: ${BASE_IMAGE}@${DIGEST}"
-          echo "image=${BASE_IMAGE}@${DIGEST}" >> "$GITHUB_OUTPUT"
+          DIGEST="$(awk -F '@' '/latest@/ {print $2}' Dockerfile)"
+          echo "Base image: ${BASE_IMAGE}:latest@${DIGEST}"
+          echo "image=${BASE_IMAGE}:latest@${DIGEST}" >> "$GITHUB_OUTPUT"
       - name: setup python
-        uses: actions/setup-python@57ded4d7d5e986d7296eab16560982c6dd7c923b
+        uses: actions/setup-python@bd6b4b6205c4dbad673328db7b31b7fab9e241c0
         with:
           python-version: '3.9'
       - name: install poetry
@@ -50,7 +50,7 @@ jobs:
         run: |
           poetry export -o requirements.txt
       - name: install cosign
-        uses: sigstore/cosign-installer@204a51a57a74d190b284a0ce69b44bc37201f343
+        uses: sigstore/cosign-installer@dd6b2e2b610a11fd73dd187a43d57cc1394e35f9
       - name: verify base image signature
         run: |
           cosign verify \
@@ -58,12 +58,20 @@ jobs:
             'https://github.com/chainguard-images/images/.github/workflows/release.yaml@refs/heads/main' \
             --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' \
             "${{ steps.base.outputs.image }}" | jq .
+      - name: set up docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@4b4e9c3e2d4531116a6f8ba8e71fc6e2cb6e6c8c
       - name: login ghcr.io
         uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: docker metadata
+        id: meta
+        uses: docker/metadata-action@c4ee3adeed93b1fa6a762f209fb01608c1a22f1e
+        with:
+          images: ${{ env.IMAGE_NAME }}
       - name: build rwalk (devel)
         id: docker
         uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671
@@ -71,9 +79,10 @@ jobs:
           context: .
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:devel
-          # action fail with
-          # ERROR: attestations are not supported by the current buildkitd
-          # sbom: true
+          labels: ${{ steps.meta.outputs.labels }}
+          builder: ${{ steps.buildx.outputs.name }}
+          sbom: true
+          provenance: true
       - name: smoke test
         run: |
           set -x
