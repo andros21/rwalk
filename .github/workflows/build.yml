@@ -40,7 +40,7 @@ jobs:
           echo "Base image: ${BASE_IMAGE}:latest@${DIGEST}"
           echo "image=${BASE_IMAGE}:latest@${DIGEST}" >> "$GITHUB_OUTPUT"
       - name: setup python
-        uses: actions/setup-python@bd6b4b6205c4dbad673328db7b31b7fab9e241c0
+        uses: actions/setup-python@61a6322f88396a6271a6ee3565807d608ecaddd1
         with:
           python-version: '3.9'
       - name: install poetry
@@ -61,7 +61,7 @@ jobs:
             "${{ steps.base.outputs.image }}" | jq .
       - name: docker buildx
         id: buildx
-        uses: docker/setup-buildx-action@16c0bc4a6e6ada2cfd8afd41d22d95379cf7c32a
+        uses: docker/setup-buildx-action@4c0219f9ac95b02789c1075625400b2acbff50b1
       - name: login ghcr.io
         uses: docker/login-action@465a07811f14bebb1938fbed4728c6a1ff8901fc
         with:
