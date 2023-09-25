@@ -11,10 +11,7 @@ WORKDIR /home/nonroot
 RUN ["/usr/bin/python3", "-m" , "venv", ".venv"]
 COPY requirements.txt requirements.txt
 RUN [".venv/bin/pip", "install", "--no-cache-dir", "--disable-pip-version-check", "--require-hashes", "-r", "requirements.txt"]
-
 # Run random walk simulation
-#
-FROM venv AS rwalker
 COPY rwalker.py rwalker.py
 RUN [".venv/bin/python3", "rwalker.py"]
 
@@ -27,6 +24,6 @@ FROM cgr.dev/chainguard/python:latest@sha256:2065a6e52402ba9616ad51d9fbc0c6587d5
 WORKDIR /home/nonroot
 COPY . .
 COPY --from=venv /home/nonroot/.venv .venv
-COPY --from=rwalker /home/nonroot/data /data
+COPY --from=venv /home/nonroot/data /data
 EXPOSE 8080
 ENTRYPOINT [".venv/bin/gunicorn", "--bind", ":8080", "--workers", "2", "rwalk:app"]
