@@ -23,7 +23,6 @@ permissions:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
-  BASE_IMAGE: cgr.dev/chainguard/python
 
 jobs:
   build:
@@ -31,14 +30,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: checkout project
-        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744
-      - name: get base image
-        id: base
-        run: |
-          set -x
-          DIGEST="$(awk -F '@' '/latest@/ {print $2}' Dockerfile)"
-          echo "Base image: ${BASE_IMAGE}:latest@${DIGEST}"
-          echo "image=${BASE_IMAGE}:latest@${DIGEST}" >> "$GITHUB_OUTPUT"
+        uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608
       - name: setup python
         uses: actions/setup-python@61a6322f88396a6271a6ee3565807d608ecaddd1
         with:
@@ -51,31 +43,31 @@ jobs:
         run: |
           poetry export -o requirements.txt
       - name: install cosign
-        uses: sigstore/cosign-installer@6e04d228eb30da1757ee4e1dd75a0ec73a653e06
-      - name: verify base image signature
+        uses: sigstore/cosign-installer@11086d25041f77fe8fe7b9ea4e48e3b9192b8f19
+      - name: verify base images
         run: |
-          cosign verify \
+          cosign dockerfile verify \
             --certificate-identity \
             'https://github.com/chainguard-images/images/.github/workflows/release.yaml@refs/heads/main' \
             --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' \
-            "${{ steps.base.outputs.image }}" | jq .
+            Dockerfile | jq .
       - name: docker buildx
         id: buildx
-        uses: docker/setup-buildx-action@4c0219f9ac95b02789c1075625400b2acbff50b1
+        uses: docker/setup-buildx-action@f95db51fddba0c2d1ec667646a06c2ce06100226
       - name: login ghcr.io
-        uses: docker/login-action@465a07811f14bebb1938fbed4728c6a1ff8901fc
+        uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: docker metadata
         id: meta
-        uses: docker/metadata-action@818d4b7b91585d195f67373fd9cb0332e31a7175
+        uses: docker/metadata-action@96383f45573cb7f253c731d3b3ab81c87ef81934
         with:
           images: ${{ env.IMAGE_NAME }}
       - name: build rwalk (devel)
         id: docker
-        uses: docker/build-push-action@2eb1c1961a95fc15694676618e422e8ba1d63825
+        uses: docker/build-push-action@0565240e2d4ab88bba5387d719585280857ece09
         with:
           context: .
           push: true
