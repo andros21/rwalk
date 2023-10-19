@@ -7,11 +7,9 @@
   <br>
   <br>
   <a href="https://github.com/andros21/rwalk/actions/workflows/build.yml">
-    <img src="https://img.shields.io/github/actions/workflow/status/andros21/rwalk/build.yml?branch=master&label=build&logo=github&logoColor=white&style=for-the-badge" alt="build">
-  </a>
+    <img src="https://img.shields.io/github/actions/workflow/status/andros21/rwalk/build.yml?branch=master&label=build&logo=github&logoColor=white&style=for-the-badge" alt="build"></a>
   <a href="https://github.com/andros21/rwalk/actions/workflows/deploy.yml">
-    <img src="https://img.shields.io/github/actions/workflow/status/andros21/rwalk/deploy.yml?branch=flyio&label=fly.io&logo=apacherocketmq&logoColor=white&style=for-the-badge" alt="deploy">
-  </a>
+    <img src="https://img.shields.io/github/actions/workflow/status/andros21/rwalk/deploy.yml?branch=flyio&label=fly.io&logo=apacherocketmq&logoColor=white&style=for-the-badge" alt="deploy"></a>
   <a href="https://github.com/andros21/rwalk/blob/master/LICENSE">
     <img src="https://img.shields.io/github/license/andros21/rwalk?color=blue&label=LICENSE&logo=gnu&style=for-the-badge" alt="License"></a>
   <h3 align="center">a dash app for <a href="https://en.wikipedia.org/wiki/Random_walk">random walk</a></h3>
