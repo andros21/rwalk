@@ -461,8 +461,8 @@ files = [
 
 [package.dependencies]
 numpy = [
-    {version = ">=1.22.4", markers = "python_version < \"3.11\""},
     {version = ">=1.23.2", markers = "python_version == \"3.11\""},
+    {version = ">=1.26.0", markers = "python_version >= \"3.12\""},
 ]
 python-dateutil = ">=2.8.2"
 pytz = ">=2020.1"
@@ -707,5 +707,5 @@ watchdog = ["watchdog"]
 
 [metadata]
 lock-version = "2.0"
-python-versions = ">=3.10,<3.12"
-content-hash = "86125ca86a89a2b82894e7500817b6e4001a18555337d4c452af7c41ef1db44c"
+python-versions = ">=3.11,<3.13"
+content-hash = "e7da7ceeb00e0f95d13b7697debbd542ad416c8fe287ef43791e2630edb4cce0"
