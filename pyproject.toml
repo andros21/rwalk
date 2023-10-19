@@ -6,7 +6,7 @@ authors = ["andros21 <andrea.ros21@e.email>"]
 license = "GPL-3.0-only"
 
 [tool.poetry.dependencies]
-python = ">=3.10,<3.12"
+python = ">=3.11,<3.13"
 pandas = "^2.1.1"
 numpy = "^1.26.0"
 dash = "^2.13.0"
