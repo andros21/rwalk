@@ -13,3 +13,10 @@ updates:
     schedule:
       interval: "monthly"
     rebase-strategy: "disabled"
+    groups:
+      poetry:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
