@@ -20,7 +20,7 @@ RUN [".venv/bin/python3", "rwalker.py"]
 #  * Copy venv from st stage
 #  * Copy simulation data results from nd stage
 #
-FROM cgr.dev/chainguard/python:latest@sha256:b8ae05271a3ac82634033e938cac688a92952119197056865ffb76e8edf1c008
+FROM cgr.dev/chainguard/python:latest@sha256:ded184cec247b6d6e4dcd202442cee861691c0943f3df47eb92a3ef9fe98875e
 WORKDIR /home/nonroot
 COPY . .
 COPY --from=venv /home/nonroot/.venv .venv
