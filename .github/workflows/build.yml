@@ -15,11 +15,6 @@ name: build rwalk
       - .github/workflows/digesta.yml
       - .github/dependabot.yml
 
-permissions:
-  contents: read
-  id-token: write
-  packages: write
-
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
@@ -27,6 +22,11 @@ env:
 jobs:
   build:
     name: build rwalk
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      digest: ${{ steps.docker.outputs.digest }}
     runs-on: ubuntu-latest
     steps:
       - name: checkout project
@@ -43,7 +43,7 @@ jobs:
         run: |
           poetry export -o requirements.txt
       - name: install cosign
-        uses: sigstore/cosign-installer@11086d25041f77fe8fe7b9ea4e48e3b9192b8f19
+        uses: sigstore/cosign-installer@1fc5bd396d372bee37d608f955b336615edf79c8
       - name: verify base images
         run: |
           cosign dockerfile verify \
@@ -67,7 +67,7 @@ jobs:
           images: ${{ env.IMAGE_NAME }}
       - name: build rwalk (devel)
         id: docker
-        uses: docker/build-push-action@0565240e2d4ab88bba5387d719585280857ece09
+        uses: docker/build-push-action@4a13e500e55cf31b7a5d59a38ab2040ab0f42f56
         with:
           context: .
           push: true
@@ -85,9 +85,19 @@ jobs:
           curl -X GET http://localhost:8080 || (docker logs smoke_rwalk && exit 1)
           docker logs smoke_rwalk
           docker stop smoke_rwalk
+  cosign:
+    name: cosign rwalk
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      packages: write
+    needs: build
+    steps:
+      - name: install cosign
+        uses: sigstore/cosign-installer@11086d25041f77fe8fe7b9ea4e48e3b9192b8f19
       - name: cosign rwalk
         run: |
-          cosign sign -y "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.docker.outputs.digest }}"
+          cosign sign -y "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build.outputs.digest }}"
       - name: install crane
         uses: imjasonh/setup-crane@00c9e93efa4e1138c9a7a5c594acd6c75a2fbf0c
       - name: tag rwalk (latest)
