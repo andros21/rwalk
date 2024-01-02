@@ -32,7 +32,7 @@ jobs:
       - name: checkout project
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
       - name: setup python
-        uses: actions/setup-python@65d7f2d534ac1bc67fcd62888c5f4f3d2cb2b236
+        uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c
         with:
           python-version: '3.9'
       - name: install poetry
@@ -43,7 +43,7 @@ jobs:
         run: |
           poetry export -o requirements.txt
       - name: install cosign
-        uses: sigstore/cosign-installer@1fc5bd396d372bee37d608f955b336615edf79c8
+        uses: sigstore/cosign-installer@9614fae9e5c5eddabb09f90a270fcb487c9f7149
       - name: verify base images
         run: |
           cosign dockerfile verify \
@@ -62,7 +62,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: docker metadata
         id: meta
-        uses: docker/metadata-action@96383f45573cb7f253c731d3b3ab81c87ef81934
+        uses: docker/metadata-action@9dc751fe249ad99385a2583ee0d084c400eee04e
         with:
           images: ${{ env.IMAGE_NAME }}
       - name: build rwalk (devel)
