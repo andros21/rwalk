@@ -15,11 +15,6 @@ name: build rwalk
       - .github/workflows/digesta.yml
       - .github/dependabot.yml
 
-permissions:
-  contents: read
-  id-token: write
-  packages: write
-
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
@@ -27,12 +22,17 @@ env:
 jobs:
   build:
     name: build rwalk
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      digest: ${{ steps.docker.outputs.digest }}
     runs-on: ubuntu-latest
     steps:
       - name: checkout project
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
       - name: setup python
-        uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c
+        uses: actions/setup-python@65d7f2d534ac1bc67fcd62888c5f4f3d2cb2b236
         with:
           python-version: '3.9'
       - name: install poetry
@@ -43,7 +43,7 @@ jobs:
         run: |
           poetry export -o requirements.txt
       - name: install cosign
-        uses: sigstore/cosign-installer@9614fae9e5c5eddabb09f90a270fcb487c9f7149
+        uses: sigstore/cosign-installer@1fc5bd396d372bee37d608f955b336615edf79c8
       - name: verify base images
         run: |
           cosign dockerfile verify \
@@ -62,7 +62,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: docker metadata
         id: meta
-        uses: docker/metadata-action@dbef88086f6cef02e264edb7dbf63250c17cef6c
+        uses: docker/metadata-action@96383f45573cb7f253c731d3b3ab81c87ef81934
         with:
           images: ${{ env.IMAGE_NAME }}
       - name: build rwalk (devel)
@@ -85,9 +85,26 @@ jobs:
           curl -X GET http://localhost:8080 || (docker logs smoke_rwalk && exit 1)
           docker logs smoke_rwalk
           docker stop smoke_rwalk
+  cosign:
+    name: cosign rwalk
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      packages: write
+    needs: build
+    steps:
+      - name: install cosign
+        uses: sigstore/cosign-installer@11086d25041f77fe8fe7b9ea4e48e3b9192b8f19
+      - name: login ghcr.io
+        uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - name: cosign rwalk
         run: |
-          cosign sign -y "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.docker.outputs.digest }}"
+          cosign sign -y "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build.outputs.digest }}"
       - name: install crane
         uses: imjasonh/setup-crane@00c9e93efa4e1138c9a7a5c594acd6c75a2fbf0c
       - name: tag rwalk (latest)
