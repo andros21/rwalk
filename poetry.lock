@@ -166,17 +166,20 @@ files = [
 
 [[package]]
 name = "dash-cytoscape"
-version = "0.3.0"
+version = "1.0.0"
 description = "A Component Library for Dash aimed at facilitating network visualization in Python, wrapped around Cytoscape.js"
 optional = false
-python-versions = "*"
+python-versions = ">=3.8"
 files = [
-    {file = "dash_cytoscape-0.3.0-py3-none-any.whl", hash = "sha256:718dc1568b9e7bfe7f64376aa903c64a1a1fe6daed4e559b254456f18dd3135f"},
-    {file = "dash_cytoscape-0.3.0.tar.gz", hash = "sha256:a71ad4fe095570b71d4ad7c0d29199e9780c2e6796173d3b25fccc2cc58c855f"},
+    {file = "dash_cytoscape-1.0.0-py3-none-any.whl", hash = "sha256:a6e240679e0e3ad20f5ba609b0dadfda2d57b3b1cf8976c7dca9173c4120c748"},
+    {file = "dash_cytoscape-1.0.0.tar.gz", hash = "sha256:0b1a8402005a4e2e7104edf28399f1e340ad7d98d8106dec280edb31c9b8dafd"},
 ]
 
 [package.dependencies]
 dash = "*"
+
+[package.extras]
+leaflet = ["dash-leaflet (>=1.0.10)"]
 
 [[package]]
 name = "dash-html-components"
@@ -735,4 +738,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11,<3.13"
-content-hash = "b8f86652cb4f287056e17b57e6dcc334205a45652e55b916705523b4530cd0c8"
+content-hash = "d145f58355308356fb9e872e028b71405073e22acf164e3e432365b8264590bd"
