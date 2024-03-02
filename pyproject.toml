@@ -7,8 +7,8 @@ license = "GPL-3.0-only"
 
 [tool.poetry.dependencies]
 python = ">=3.11,<3.13"
-pandas = "^2.2.0"
-numpy = "^1.26.3"
+pandas = "^2.2.1"
+numpy = "^1.26.4"
 dash = "^2.15.0"
 networkx = "^3.2"
 gunicorn = "^21.2.0"
