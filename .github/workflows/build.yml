@@ -43,7 +43,7 @@ jobs:
         run: |
           poetry export -o requirements.txt
       - name: install cosign
-        uses: sigstore/cosign-installer@e1523de7571e31dbe865fd2e80c5c7c23ae71eb4
+        uses: sigstore/cosign-installer@59acb6260d9c0ba8f4a2f9d9b48431a222b68e20
       - name: verify base images
         run: |
           cosign dockerfile verify \
@@ -53,7 +53,7 @@ jobs:
             Dockerfile | jq .
       - name: docker buildx
         id: buildx
-        uses: docker/setup-buildx-action@2b51285047da1547ffb1b2203d8be4c0af6b1f20
+        uses: docker/setup-buildx-action@d70bba72b1f3fd22344832f00baa16ece964efeb
       - name: login ghcr.io
         uses: docker/login-action@e92390c5fb421da1463c202d546fed0ec5c39f20
         with:
@@ -95,7 +95,7 @@ jobs:
     needs: build
     steps:
       - name: install cosign
-        uses: sigstore/cosign-installer@e1523de7571e31dbe865fd2e80c5c7c23ae71eb4
+        uses: sigstore/cosign-installer@59acb6260d9c0ba8f4a2f9d9b48431a222b68e20
       - name: login ghcr.io
         uses: docker/login-action@e92390c5fb421da1463c202d546fed0ec5c39f20
         with:
