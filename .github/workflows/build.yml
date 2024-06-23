@@ -30,7 +30,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: checkout project
-        uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
       - name: setup python
         uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d
         with:
@@ -67,7 +67,7 @@ jobs:
           images: ${{ env.IMAGE_NAME }}
       - name: build rwalk (devel)
         id: docker
-        uses: docker/build-push-action@2cdde995de11925a030ce8070c3d77a52ffcf1c0
+        uses: docker/build-push-action@31159d49c0d4756269a0940a750801a1ea5d7003
         with:
           context: .
           push: true
@@ -106,7 +106,7 @@ jobs:
         run: |
           cosign sign -y "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build.outputs.digest }}"
       - name: install crane
-        uses: imjasonh/setup-crane@00c9e93efa4e1138c9a7a5c594acd6c75a2fbf0c
+        uses: imjasonh/setup-crane@31b88efe9de28ae0ffa220711af4b60be9435f6e
       - name: tag rwalk (latest)
         run: |
           crane tag "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:devel" latest
