@@ -9,10 +9,10 @@ license = "GPL-3.0-only"
 python = ">=3.11,<3.13"
 pandas = "^2.2.2"
 numpy = "^1.26.4"
-dash = "^2.17.0"
+dash = "^2.17.1"
 networkx = "^3.3"
 gunicorn = "^22.0.0"
-scipy = "^1.13.1"
+scipy = "^1.14.0"
 dash-cytoscape = "^1.0.1"
 
 [tool.poetry.dev-dependencies]
