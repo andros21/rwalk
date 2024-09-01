@@ -19,3 +19,7 @@ processes = ["app"]
 type = "requests"
 soft_limit = 20
 hard_limit = 25
+
+[[vm]]
+size = "shared-cpu-1x"
+memory = "512mb"
