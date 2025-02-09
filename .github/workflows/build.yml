@@ -44,7 +44,7 @@ jobs:
           poetry install --no-root --without="main"
           poetry export -o requirements.txt
       - name: install cosign
-        uses: sigstore/cosign-installer@dc72c7d5c4d10cd6bcb8cf6e3fd625a9e5e537da
+        uses: sigstore/cosign-installer@c56c2d3e59e4281cc41dea2217323ba5694b171e
       - name: verify base images
         run: |
           cosign dockerfile verify \
@@ -96,7 +96,7 @@ jobs:
     needs: build
     steps:
       - name: install cosign
-        uses: sigstore/cosign-installer@dc72c7d5c4d10cd6bcb8cf6e3fd625a9e5e537da
+        uses: sigstore/cosign-installer@c56c2d3e59e4281cc41dea2217323ba5694b171e
       - name: login ghcr.io
         uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567
         with:
