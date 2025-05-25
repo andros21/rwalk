@@ -14,6 +14,7 @@ name: build rwalk
       - .github/workflows/deploy.yml
       - .github/workflows/digesta.yml
       - .github/dependabot.yml
+      - .github/CODEOWNERS
 
 env:
   REGISTRY: ghcr.io
