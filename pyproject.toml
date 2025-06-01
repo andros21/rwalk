@@ -1,21 +1,22 @@
-[tool.poetry]
+[project]
 name = "rwalk"
 version = "0.0.0"
 description = "dash app random walk"
-authors = ["andros21 <andrea.ros21@e.email>"]
+authors = [{ name = "andros21", email = "andrea.ros21@e.email" }]
 license = "GPL-3.0-only"
+requires-python = ">=3.11,<3.14"
+dependencies = [
+  "pandas==2.2.3",
+  "numpy==2.2.2",
+  "dash==2.18.2",
+  "networkx==3.4",
+  "gunicorn==23.0.0",
+  "scipy==1.15.1",
+  "dash-cytoscape==1.0.2",
+]
 
-[tool.poetry.dependencies]
-python = ">=3.11,<3.14"
-pandas = "^2.2.3"
-numpy = "^2.2.1"
-dash = "^2.18.2"
-networkx = "^3.4"
-gunicorn = "^23.0.0"
-scipy = "^1.14.1"
-dash-cytoscape = "^1.0.2"
-
-[tool.poetry.dev-dependencies]
+[tool.poetry.requires-plugins]
+poetry-plugin-export = ">1.8"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
