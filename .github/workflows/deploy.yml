@@ -25,7 +25,7 @@ jobs:
       - name: checkout project
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - name: install cosign
-        uses: sigstore/cosign-installer@3454372f43399081ed03b604cb2d021dabca52bb
+        uses: sigstore/cosign-installer@fb28c2b6339dcd94da6e4cbcbc5e888961f6f8c3
       - name: verify rwalk image
         run: |
           cosign verify \
