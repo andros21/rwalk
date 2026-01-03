@@ -4,7 +4,7 @@ version = "0.0.0"
 description = "dash app random walk"
 authors = [{ name = "andros21", email = "andrea.ros21@e.email" }]
 license = "GPL-3.0-only"
-requires-python = ">=3.11,<3.14"
+requires-python = ">=3.12,<3.15"
 dependencies = [
   "pandas==2.2.3",
   "numpy==2.2.2",
