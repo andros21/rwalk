@@ -108,7 +108,7 @@ jobs:
         run: |
           cosign sign -y "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build.outputs.digest }}"
       - name: install crane
-        uses: imjasonh/setup-crane@31b88efe9de28ae0ffa220711af4b60be9435f6e
+        uses: imjasonh/setup-crane@6da1ae018866400525525ce74ff892880c099987
       - name: tag rwalk (latest)
         run: |
           crane tag "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:devel" latest
