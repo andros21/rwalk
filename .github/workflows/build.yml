@@ -35,7 +35,7 @@ jobs:
       - name: setup python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
         with:
-          python-version: '3.9'
+          python-version: '3.11'
       - name: install poetry
         uses: snok/install-poetry@76e04a911780d5b312d89783f7b1cd627778900a
         with:
