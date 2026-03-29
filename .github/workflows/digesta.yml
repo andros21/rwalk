@@ -18,7 +18,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-      - uses: chainguard-dev/digestabot@a110b65f3d4742d56b5b2b2306de6e2e54306724
+      - uses: chainguard-dev/digestabot@afe360aa3b0c29d88844138e8fa0349384398967
         with:
           title-for-pr: 'build(Dockerfile): bump python latest tag digest'
           commit-message: 'build(Dockerfile): bump python latest tag digest'
