@@ -1,26 +1,13 @@
-# Apko Chainguard Images!
-# => https://github.com/chainguard-dev/apko
-# => https://github.com/chainguard-images
-#
-
-# cgr.dev/chainguard/python:latest-dev for build
-# => https://github.com/chainguard-images/images/tree/main/images/python
-#
-FROM cgr.dev/chainguard/python:latest-dev AS venv
+FROM python:3.13-slim AS venv
 WORKDIR /home/nonroot
-RUN ["/usr/bin/python3", "-m" , "venv", ".venv"]
+RUN ["python3", "-m" , "venv", ".venv"]
 COPY requirements.txt requirements.txt
 RUN [".venv/bin/pip", "install", "--no-cache-dir", "--disable-pip-version-check", "--require-hashes", "-r", "requirements.txt"]
 # Run random walk simulation
 COPY rwalker.py rwalker.py
 RUN [".venv/bin/python3", "rwalker.py"]
 
-# cgr.dev/chainguard/python:latest digest for deploy
-# => https://github.com/chainguard-images/images/tree/main/images/python
-#  * Copy venv from st stage
-#  * Copy simulation data results from nd stage
-#
-FROM cgr.dev/chainguard/python:latest@sha256:383c8b591d31dd66d36fc0a565a24c7ce7ed04df63114f0074489bc13a8dc925
+FROM python:3.13-slim@sha256:0ee2df98db454606ca92bb7a79d47ff7dc9cc0c8d5901e32eb71e6b5203377b2
 WORKDIR /home/nonroot
 COPY . .
 COPY --from=venv /home/nonroot/.venv .venv
